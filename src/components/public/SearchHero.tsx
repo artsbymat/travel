@@ -144,6 +144,7 @@ export function SearchHero() {
             <div className="flex items-end md:col-span-1">
               <Button
                 type="submit"
+                variant="secondary"
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg h-11 md:h-auto"
               >
                 <span className="hidden md:inline">Search</span>

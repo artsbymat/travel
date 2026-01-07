@@ -4,7 +4,9 @@ import { WhyChooseUs } from "@/components/public/WhyChooseUs";
 export default function Home() {
   return (
     <main>
-      <SearchHero />
+      <div className="max-w-7xl mx-auto">
+        <SearchHero />
+      </div>
       <WhyChooseUs />
     </main>
   );

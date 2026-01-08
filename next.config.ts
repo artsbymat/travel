@@ -4,7 +4,11 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
   images: {
-    domains: ["res.cloudinary.com"],
+    remotePatterns: [
+      {
+        hostname: "res.cloudinary.com",
+      },
+    ],
   },
 };
 

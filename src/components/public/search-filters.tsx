@@ -147,42 +147,6 @@ export function SearchFilters({}: SearchFiltersProps) {
           </div>
         )}
       </Card>
-
-      {/* Vendor Rating Filter */}
-      <Card className="p-4">
-        <button
-          onClick={() => toggleSection("rating")}
-          className="flex w-full items-center justify-between font-semibold text-foreground"
-        >
-          Vendor Rating
-          <ChevronDown
-            className={`h-5 w-5 transition-transform ${expandedSections.rating ? "rotate-180" : ""}`}
-          />
-        </button>
-        {expandedSections.rating && (
-          <div className="mt-4 space-y-3">
-            {[
-              { label: "4.5+ stars", value: 4.5 },
-              { label: "4.0+ stars", value: 4 },
-              { label: "3.5+ stars", value: 3.5 },
-              { label: "Any rating", value: 0 },
-            ].map(({ label, value }) => (
-              <label
-                key={label}
-                className="flex items-center gap-3 cursor-pointer"
-              >
-                <Checkbox
-                  checked={filters.minRating === value}
-                  onCheckedChange={() =>
-                    setFilters((prev) => ({ ...prev, minRating: value }))
-                  }
-                />
-                <span className="text-sm text-muted-foreground">{label}</span>
-              </label>
-            ))}
-          </div>
-        )}
-      </Card>
     </div>
   );
 }

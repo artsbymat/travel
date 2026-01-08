@@ -1,11 +1,8 @@
 "use client";
 
 import { useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 import { SearchFilters } from "@/components/public/search-filters";
 import { TripCard } from "@/components/public/trip-card";
-import { Card } from "@/components/ui/card";
-import { ArrowRight } from "lucide-react";
 import { FormRoute } from "@/components/public/form-route";
 
 const mockTrips = [
@@ -21,6 +18,8 @@ const mockTrips = [
     rating: 4.8,
     reviews: 324,
     features: ["AC", "WiFi", "USB Charge", "Reclining Seats"],
+    imageUrl:
+      "https://res.cloudinary.com/dlxiuvlm3/image/upload/v1767852561/Other/keunggulan-toyota-hiace.jpg",
   },
   {
     id: "trip-2",
@@ -34,6 +33,8 @@ const mockTrips = [
     rating: 4.5,
     reviews: 156,
     features: ["AC", "Reclining Seats", "Luggage Storage"],
+    imageUrl:
+      "https://res.cloudinary.com/dlxiuvlm3/image/upload/v1767853099/Other/WhatsApp-Image-2024-01-25-at-09.29.20-1.jpg",
   },
   {
     id: "trip-3",
@@ -47,6 +48,8 @@ const mockTrips = [
     rating: 4.3,
     reviews: 89,
     features: ["AC", "WiFi"],
+    imageUrl:
+      "https://res.cloudinary.com/dlxiuvlm3/image/upload/v1767853177/Other/Isuzu-Elf-Microbus-Muat-10-Orang.webp",
   },
   {
     id: "trip-4",
@@ -60,6 +63,8 @@ const mockTrips = [
     rating: 4.6,
     reviews: 245,
     features: ["AC", "WiFi", "USB Charge", "Reclining Seats", "Entertainment"],
+    imageUrl:
+      "https://res.cloudinary.com/dlxiuvlm3/image/upload/v1767853243/Other/category_13seater-high-711x533.jpg",
   },
   {
     id: "trip-5",
@@ -73,6 +78,8 @@ const mockTrips = [
     rating: 4.7,
     reviews: 178,
     features: ["AC", "Reclining Seats"],
+    imageUrl:
+      "https://res.cloudinary.com/dlxiuvlm3/image/upload/v1767853525/Other/2019-Mercedes-Benz-Metris-passenger-front-three-quarter.jpg",
   },
 ];
 
@@ -86,21 +93,9 @@ function SearchContent() {
     passengers: 1,
   });
 
-  const [sortBy, setSortBy] = useState("price");
-
-  const sortedTrips = [...mockTrips].sort((a, b) => {
-    if (sortBy === "price") return a.pricePerSeat - b.pricePerSeat;
-    if (sortBy === "time")
-      return (
-        Number.parseInt(a.departureTime) - Number.parseInt(b.departureTime)
-      );
-    if (sortBy === "rating") return b.rating - a.rating;
-    return 0;
-  });
-
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <main className="flex-1 mx-auto">
+      <main className="flex-1 mx-auto max-w-7xl ">
         {/* Main Content */}
         <div className="container px-4 py-8">
           <div className="grid gap-6 lg:grid-cols-4">
@@ -120,37 +115,9 @@ function SearchContent() {
                 setDate={setDate}
               />
 
-              {/* Sort Options */}
-              <Card className="mb-6 p-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm font-medium text-foreground">
-                    {mockTrips.length} trips found
-                  </p>
-                  <div className="flex gap-2">
-                    {["price", "time", "rating"].map((option) => (
-                      <button
-                        key={option}
-                        onClick={() => setSortBy(option)}
-                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors capitalize ${
-                          sortBy === option
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground hover:bg-border"
-                        }`}
-                      >
-                        {option === "price"
-                          ? "Cheapest"
-                          : option === "time"
-                            ? "Earliest"
-                            : "Best Rated"}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </Card>
-
               {/* Trip Cards */}
               <div className="space-y-4">
-                {sortedTrips.map((trip) => (
+                {mockTrips.map((trip) => (
                   <TripCard key={trip.id} {...trip} />
                 ))}
               </div>

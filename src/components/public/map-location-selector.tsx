@@ -5,7 +5,6 @@ import {
   MapDrawControl,
   MapDrawDelete,
   MapDrawMarker,
-  MapDrawUndo,
   MapLocateControl,
   MapMarker,
   MapSearchControl,

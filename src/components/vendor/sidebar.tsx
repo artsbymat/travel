@@ -3,14 +3,17 @@
 import * as React from "react";
 import {
   AudioWaveform,
+  BookUser,
+  CircleUserRound,
   Command,
   Construction,
   GalleryVerticalEnd,
   LayoutDashboard,
+  Route,
   Settings2,
+  Van,
 } from "lucide-react";
 
-import { NavMain } from "@/components/vendor/nav-main";
 import { NavProjects } from "@/components/vendor/nav-projects";
 import { NavUser } from "@/components/vendor/nav-user";
 import { TeamSwitcher } from "@/components/vendor/team-switcher";
@@ -84,9 +87,34 @@ const data = {
   ],
   projects: [
     {
+      name: "Dashboard",
+      url: "/admin",
+      icon: LayoutDashboard,
+    },
+    {
+      name: "Cars",
+      url: "/admin/cars",
+      icon: Van,
+    },
+    {
+      name: "Drivers",
+      url: "/admin/driver",
+      icon: BookUser,
+    },
+    {
+      name: "Routes",
+      url: "/admin/route",
+      icon: Route,
+    },
+    {
       name: "Booking",
       url: "/admin/booking",
       icon: Construction,
+    },
+    {
+      name: "Profil",
+      url: "/admin/profile",
+      icon: CircleUserRound,
     },
   ],
 };
@@ -98,7 +126,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>

@@ -12,6 +12,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { useRouter } from "next/navigation";
 
 export function FormRoute({
   formData,
@@ -40,8 +41,21 @@ export function FormRoute({
   setIsDateOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setDate: React.Dispatch<React.SetStateAction<Date | undefined>>;
 }) {
+  const router = useRouter();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const queryParams = new URLSearchParams({
+      from: formData.from,
+      to: formData.to,
+      date: formData.date,
+      passengers: formData.passengers.toString(),
+    }).toString();
+    router.push(`/routes?${queryParams}`);
+  };
+
   return (
-    <form className="mb-8">
+    <form className="mb-8" onSubmit={handleSubmit}>
       <div className="grid gap-3 rounded-2xl bg-secondary border backdrop-blur p-4 shadow-lg md:grid-cols-5 md:gap-2 md:p-6">
         {/* From Input */}
         <div className="flex flex-col gap-2 md:col-span-1">
@@ -146,7 +160,7 @@ export function FormRoute({
             variant="secondary"
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg h-11 md:h-auto"
           >
-            <span className="hidden md:inline">Search</span>
+            <span className="hidden md:inline">Cari Rute</span>
             <ArrowRight className="h-5 w-5 md:hidden" />
           </Button>
         </div>

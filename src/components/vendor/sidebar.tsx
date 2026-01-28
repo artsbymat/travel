@@ -8,9 +8,12 @@ import {
   Command,
   Construction,
   GalleryVerticalEnd,
+  Landmark,
   LayoutDashboard,
+  Logs,
   Route,
   Settings2,
+  Tag,
   Van,
 } from "lucide-react";
 
@@ -112,9 +115,24 @@ const data = {
       icon: Construction,
     },
     {
+      name: "Coupons",
+      url: "/admin/coupons",
+      icon: Tag,
+    },
+    {
+      name: "Finance",
+      url: "/admin/finance",
+      icon: Landmark,
+    },
+    {
       name: "Profil",
       url: "/admin/profile",
       icon: CircleUserRound,
+    },
+    {
+      name: "Logs",
+      url: "/admin/logs",
+      icon: Logs,
     },
   ],
 };

@@ -1,3 +1,6 @@
+import { Contact } from "@/components/public/Contact";
+import { FAQ } from "@/components/public/FAQ";
+import { Partners } from "@/components/public/Partners";
 import { SearchHero } from "@/components/public/SearchHero";
 import { WhyChooseUs } from "@/components/public/WhyChooseUs";
 
@@ -8,6 +11,9 @@ export default function Home() {
         <SearchHero />
       </div>
       <WhyChooseUs />
+      <Partners />
+      <FAQ />
+      <Contact />
     </main>
   );
 }

@@ -3,6 +3,7 @@ import { FAQ } from "@/components/public/FAQ";
 import { Partners } from "@/components/public/Partners";
 import { SearchHero } from "@/components/public/SearchHero";
 import { WhyChooseUs } from "@/components/public/WhyChooseUs";
+import TestimonialsComponent from "@/components/public/Testimonial";
 
 export default function Home() {
   return (
@@ -13,6 +14,7 @@ export default function Home() {
       <WhyChooseUs />
       <Partners />
       <FAQ />
+      <TestimonialsComponent />
       <Contact />
     </main>
   );

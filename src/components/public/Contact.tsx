@@ -18,30 +18,30 @@ export function Contact() {
           </p>
           <div className="mx-auto grid max-w-(--breakpoint-xl) gap-16 px-6 py-24 md:grid-cols-2 md:gap-10 md:px-0 lg:grid-cols-3">
             <div className="flex flex-col items-center text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-border/30 bg-primary/5 text-primary shadow-xl/2 dark:bg-primary/10">
-                <MailIcon />
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-border/30 bg-primary/30 text-primary shadow-xl/2">
+                <MailIcon className="text-chart-3 dark:text-primary" />
               </div>
               <h3 className="mt-6 font-semibold text-xl">Email</h3>
               <p className="mt-2 text-muted-foreground">
                 Our friendly team is here to help.
               </p>
               <Link
-                className="mt-4 font-medium text-primary"
+                className="mt-4 font-medium dark:text-primary text-chart-3"
                 href="mailto:akashmoradiya3444@gmail.com"
               >
                 akashmoradiya3444@gmail.com
               </Link>
             </div>
             <div className="flex flex-col items-center text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-border/30 bg-primary/5 text-primary shadow-xl/2 dark:bg-primary/10">
-                <MapPinIcon />
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-border/30 bg-primary/30 text-primary shadow-xl/2">
+                <MapPinIcon className="text-chart-3 dark:text-primary" />
               </div>
               <h3 className="mt-6 font-semibold text-xl">Office</h3>
               <p className="mt-2 text-muted-foreground">
                 Come say hello at our office HQ.
               </p>
               <Link
-                className="mt-4 font-medium text-primary"
+                className="mt-4 font-medium dark:text-primary text-chart-3"
                 href="https://map.google.com"
                 target="_blank"
               >
@@ -49,15 +49,15 @@ export function Contact() {
               </Link>
             </div>
             <div className="flex flex-col items-center text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-border/30 bg-primary/5 text-primary shadow-xl/2 dark:bg-primary/10">
-                <PhoneIcon />
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-border/30 bg-primary/30 text-primary shadow-xl/2">
+                <PhoneIcon className="text-chart-3 dark:text-primary" />
               </div>
               <h3 className="mt-6 font-semibold text-xl">Phone</h3>
               <p className="mt-2 text-muted-foreground">
                 Mon-Fri from 8am to 5pm.
               </p>
               <Link
-                className="mt-4 font-medium text-primary"
+                className="mt-4 font-medium dark:text-primary text-chart-3"
                 href="tel:akashmoradiya3444@gmail.com"
               >
                 +1 (555) 000-0000

@@ -1,7 +1,8 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { Building2 } from "lucide-react";
+import { Star, Van } from "lucide-react";
+import Link from "next/link";
 
 interface Partner {
   id: string;
@@ -58,15 +59,16 @@ export function Partners() {
   ];
 
   return (
-    <section className="bg-background px-4 py-16 md:py-20">
+    <section className="px-4 py-16 md:py-20">
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-12 text-center">
           <h2 className="text-3xl font-bold text-foreground md:text-4xl">
-            Our Partners
+            Partner Kami
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Trusted by leading transportation companies across Indonesia
+            Terpercaya oleh perusahaan transportasi terkemuka di seluruh
+            Indonesia
           </p>
         </div>
 
@@ -75,11 +77,11 @@ export function Partners() {
           {partners.map((partner) => (
             <Card
               key={partner.id}
-              className="border-0 bg-card p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-1"
+              className="border-0 bg-secondary p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-1"
             >
               <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <Building2 className="h-6 w-6 text-primary" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/20">
+                  <Van className="h-6 w-6 dark:text-primary text-chart-3" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-foreground">
@@ -94,9 +96,7 @@ export function Partners() {
               {/* Stats */}
               <div className="mt-4 flex items-center justify-between pt-4 border-t border-border">
                 <div className="flex items-center gap-1">
-                  <span className="text-sm font-semibold text-foreground">
-                    ★
-                  </span>
+                  <Star className="size-4 text-yellow-500" />
                   <span className="text-sm font-semibold text-foreground">
                     {partner.rating}
                   </span>
@@ -112,10 +112,13 @@ export function Partners() {
         {/* CTA */}
         <div className="mt-12 text-center">
           <p className="text-muted-foreground">
-            Become our partner and reach thousands of travelers{" "}
-            <a href="#" className="font-semibold text-primary hover:underline">
-              Learn more →
-            </a>
+            Bermitra dengan kami dan jangkau ribuan pelancong setiap hari.{" "}
+            <Link
+              href="/become-a-partner"
+              className="font-semibold dark:text-primary text-chart-3 hover:underline"
+            >
+              Bergabunglah sekarang!
+            </Link>
           </p>
         </div>
       </div>

@@ -73,7 +73,7 @@ const TestimonialsComponent = () => {
       >
         {/* Left Content */}
         <div className="space-y-4 sm:w-1/2 lg:w-1/3">
-          <p className="text-primary text-sm font-medium uppercase">
+          <p className="dark:text-primary text-chart-3 text-sm font-medium uppercase">
             Real customers
           </p>
 
@@ -89,11 +89,11 @@ const TestimonialsComponent = () => {
           <div className="flex items-center gap-4">
             <CarouselPrevious
               variant="default"
-              className="disabled:bg-primary/10 disabled:text-primary static translate-y-0 rounded-md disabled:opacity-100"
+              className="disabled:bg-primary/30 disabled:dark:text-primary disabled:text-chart-3 static translate-y-0 rounded-md disabled:opacity-100"
             />
             <CarouselNext
               variant="default"
-              className="disabled:bg-primary/10 disabled:text-primary static translate-y-0 rounded-md disabled:opacity-100"
+              className="disabled:bg-primary/30 disabled:dark:text-primary disabled:text-chart-3 static translate-y-0 rounded-md disabled:opacity-100"
             />
           </div>
         </div>

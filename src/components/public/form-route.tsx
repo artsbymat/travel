@@ -158,7 +158,7 @@ export function FormRoute({
           <Button
             type="submit"
             variant="secondary"
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg h-11 md:h-auto"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg h-11 md:h-auto cursor-pointer"
           >
             <span className="hidden md:inline">Cari Rute</span>
             <ArrowRight className="h-5 w-5 md:hidden" />

@@ -49,8 +49,8 @@ export function WhyChooseUs() {
                 key={idx}
                 className="p-6 bg-secondary hover:shadow-md transition-shadow"
               >
-                <div className="gap-2 rounded-lg bg-transparent p-3 flex">
-                  <Icon className="h-6 w-6 text-primary" />
+                <div className="gap-2 rounded-lg bg-transparent flex">
+                  <Icon className="h-6 w-6 text-chart-3 dark:text-chart-2" />
                   <h3 className="font-semibold text-foreground">
                     {feature.title}
                   </h3>

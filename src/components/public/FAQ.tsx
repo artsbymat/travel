@@ -57,7 +57,7 @@ export function FAQ() {
   };
 
   return (
-    <section className="bg-muted/50 px-4 py-16 md:py-20">
+    <section className="px-4 py-16 md:py-20">
       <div className="mx-auto max-w-3xl">
         {/* Header */}
         <div className="mb-12 text-center">
@@ -77,7 +77,7 @@ export function FAQ() {
             return (
               <Card
                 key={faq.id}
-                className="border border-border bg-card shadow-sm transition-all p-0"
+                className="border border-border bg-secondary shadow-sm transition-all p-0"
               >
                 <button
                   onClick={() => toggleExpanded(faq.id)}

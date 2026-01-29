@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,8 +21,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Download, AlertCircle, CheckCircle, Clock } from "lucide-react";
-import { BookOpen } from "lucide-react"; // Import BookOpen
+import {
+  Eye,
+  Download,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  ExternalLink,
+} from "lucide-react";
+import { BookOpen } from "lucide-react";
+import Link from "next/link";
 
 interface Booking {
   id: string;
@@ -393,23 +401,24 @@ export default function AdminBookingPage() {
                     </TableCell>
                     <TableCell className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">
+                        <Link href={`/admin/booking/${booking.id}`}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0"
+                            title="View Details"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </Link>
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => handleViewDetails(booking)}
                           className="h-8 w-8 p-0"
                           title="View Details"
+                          onClick={() => handleViewDetails(booking)}
                         >
                           <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDownloadInvoice(booking)}
-                          className="h-8 w-8 p-0"
-                          title="Download Invoice"
-                        >
-                          <Download className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>

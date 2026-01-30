@@ -52,12 +52,12 @@ export function TripCard({
               </h3>
               <p className="text-sm text-muted-foreground">{vehicleType}</p>
             </div>
-            <div className="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 h-fit">
-              <Star className="h-4 w-4 fill-primary text-primary" />
-              <span className="font-semibold text-chart-2">
+            <div className="flex items-center gap-2 rounded-lg bg-primary/30 px-3 py-2 h-fit">
+              <Star className="h-4 w-4 fill-chart-3 dark:text-primary text-chart-3" />
+              <span className="font-semibold text-chart-3">
                 {rating.toFixed(1)}
               </span>
-              <span className="text-xs text-muted-foreground">({reviews})</span>
+              <span className="text-xs">({reviews})</span>
             </div>
           </div>
           <div className="mb-6 grid grid-cols-3 gap-4 md:grid-cols-3">
@@ -118,7 +118,7 @@ export function TripCard({
               <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">
                 Price per Seat
               </p>
-              <p className="text-2xl font-bold text-chart-2 font-jetbrains-mono">
+              <p className="text-2xl font-bold dark:text-primary text-chart-3 font-jetbrains-mono">
                 Rp {pricePerSeat.toLocaleString()}
               </p>
             </div>
@@ -127,8 +127,8 @@ export function TripCard({
       </div>
 
       <Link href={`/routes/${id}`}>
-        <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
-          Select Trip
+        <Button className="w-full bg-primary hover:bg-primary/80 font-semibold">
+          Pilih Trip
         </Button>
       </Link>
     </Card>

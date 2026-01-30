@@ -5,7 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { PassengerForm } from "@/components/public/passenger-form";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapLocationSelector } from "@/components/public/map-location-selector";
+import { MapPickupSelector } from "@/components/public/map-pickup-selector";
+import { MapDropoffSelector } from "@/components/public/map-dropoff-selector";
+import { LatLngExpression } from "leaflet";
 
 export default function PassengerPage() {
   const router = useRouter();
@@ -15,8 +17,13 @@ export default function PassengerPage() {
   const seatCount = seats.split(",").filter(Boolean).length;
 
   const [step, setStep] = useState<"passengers" | "locations">("locations");
-  const [selectedPickup, setSelectedPickup] = useState("");
-  const [selectedDropoff, setSelectedDropoff] = useState("");
+
+  const [pickupCoordinate, setPickupCoordinate] = useState<LatLngExpression>([
+    0, 0,
+  ]);
+  const [dropoffCoordinate, setDropoffCoordinate] = useState<LatLngExpression>([
+    0, 0,
+  ]);
 
   const handlePassengerSubmit = () => {
     setStep("locations");
@@ -24,7 +31,7 @@ export default function PassengerPage() {
 
   const handleLocationSubmit = () => {
     router.push(
-      `/payment?tripId=${tripId}&seats=${seats}&pickup=${selectedPickup}&dropoff=${selectedDropoff}`,
+      `/payment?tripId=${tripId}&seats=${seats}&pickup=${pickupCoordinate}&dropoff=${dropoffCoordinate}`,
     );
   };
 
@@ -54,8 +61,16 @@ export default function PassengerPage() {
                 />
               ) : (
                 <div className="space-y-4">
-                  <MapLocationSelector title="Pilih Lokasi Penjemputan" />
-                  <MapLocationSelector title="Pilih Lokasi Pengantaran" />
+                  <MapPickupSelector
+                    title="Pilih Lokasi Penjemputan"
+                    pickupCoordinate={pickupCoordinate}
+                    setPickupCoordinate={setPickupCoordinate}
+                  />
+                  <MapDropoffSelector
+                    title="Pilih Lokasi Pengantaran"
+                    dropoffCoordinate={dropoffCoordinate}
+                    setDropoffCoordinate={setDropoffCoordinate}
+                  />
                   <div className="mt-6 flex gap-3">
                     <Button
                       type="button"

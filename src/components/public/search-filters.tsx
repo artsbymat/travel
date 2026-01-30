@@ -52,7 +52,7 @@ export function SearchFilters({}: SearchFiltersProps) {
           onClick={() => toggleSection("time")}
           className="flex w-full items-center justify-between font-semibold text-foreground"
         >
-          Departure Time
+          Waktu Keberangkatan
           <ChevronDown
             className={`h-5 w-5 transition-transform ${expandedSections.time ? "rotate-180" : ""}`}
           />
@@ -75,7 +75,7 @@ export function SearchFilters({}: SearchFiltersProps) {
                     handleCheckboxChange("timeSlots", time)
                   }
                 />
-                <span className="text-sm text-muted-foreground">{time}</span>
+                <span className="text-sm">{time}</span>
               </label>
             ))}
           </div>
@@ -88,7 +88,7 @@ export function SearchFilters({}: SearchFiltersProps) {
           onClick={() => toggleSection("vehicle")}
           className="flex w-full items-center justify-between font-semibold text-foreground"
         >
-          Vehicle Type
+          Tipe Kendaraan
           <ChevronDown
             className={`h-5 w-5 transition-transform ${expandedSections.vehicle ? "rotate-180" : ""}`}
           />
@@ -107,7 +107,7 @@ export function SearchFilters({}: SearchFiltersProps) {
                       handleCheckboxChange("vehicleTypes", type)
                     }
                   />
-                  <span className="text-sm text-muted-foreground">{type}</span>
+                  <span className="text-sm">{type}</span>
                 </label>
               ),
             )}
@@ -121,7 +121,7 @@ export function SearchFilters({}: SearchFiltersProps) {
           onClick={() => toggleSection("price")}
           className="flex w-full items-center justify-between font-semibold text-foreground"
         >
-          Price Range
+          Rentang Harga
           <ChevronDown
             className={`h-5 w-5 transition-transform ${expandedSections.price ? "rotate-180" : ""}`}
           />
@@ -140,7 +140,7 @@ export function SearchFilters({}: SearchFiltersProps) {
                 }))
               }
             />
-            <div className="flex justify-between text-sm text-muted-foreground">
+            <div className="flex justify-between text-sm">
               <span>Rp {filters.priceRange[0].toLocaleString()}</span>
               <span>Rp {filters.priceRange[1].toLocaleString()}</span>
             </div>

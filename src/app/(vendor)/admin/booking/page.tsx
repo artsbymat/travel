@@ -28,6 +28,8 @@ import {
   CheckCircle,
   Clock,
   ExternalLink,
+  Plus,
+  X,
 } from "lucide-react";
 import { BookOpen } from "lucide-react";
 import Link from "next/link";
@@ -128,6 +130,22 @@ export default function AdminBookingPage() {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [formData, setFormData] = useState({
+    passengerName: "",
+    phone: "",
+    email: "",
+    tripRoute: "",
+    tripDate: "",
+    tripTime: "",
+    seats: "",
+    passengers: 1,
+    totalAmount: 0,
+    paymentStatus: "Pending",
+    bookingStatus: "Pending",
+    vendor: "TravelHub Pro",
+  });
+
   const filteredBookings = bookings.filter((booking) => {
     const matchesSearch =
       booking.bookingCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -192,6 +210,24 @@ export default function AdminBookingPage() {
     console.log("[v0] Downloading invoice for booking:", booking.bookingCode);
   };
 
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]:
+        name === "passengers" || name === "totalAmount" ? Number(value) : value,
+    }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
   const handleCancelBooking = (bookingId: string) => {
     setBookings(
       bookings.map((booking) =>
@@ -200,6 +236,41 @@ export default function AdminBookingPage() {
           : booking,
       ),
     );
+  };
+
+  const handleAddManualBooking = () => {
+    if (
+      formData.passengerName &&
+      formData.phone &&
+      formData.email &&
+      formData.tripRoute &&
+      formData.tripDate &&
+      formData.seats &&
+      formData.totalAmount > 0
+    ) {
+      const newBooking: Booking = {
+        id: String(bookings.length + 1),
+        bookingCode: `BK${String(bookings.length + 1).padStart(3, "0")}`,
+        ...formData,
+        createdAt: new Date().toISOString().split("T")[0],
+      };
+      setBookings([newBooking, ...bookings]);
+      setFormData({
+        passengerName: "",
+        phone: "",
+        email: "",
+        tripRoute: "",
+        tripDate: "",
+        tripTime: "",
+        seats: "",
+        passengers: 1,
+        totalAmount: 0,
+        paymentStatus: "Pending",
+        bookingStatus: "Pending",
+        vendor: "TravelHub Pro",
+      });
+      setShowManualForm(false);
+    }
   };
 
   const totalBookings = bookings.length;
@@ -260,6 +331,285 @@ export default function AdminBookingPage() {
           </div>
         </Card>
       </div>
+
+      {/* Manual Booking Button */}
+      <div className="flex justify-end">
+        <Button onClick={() => setShowManualForm(true)} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Add Manual Booking
+        </Button>
+      </div>
+
+      {/* Manual Booking Form Modal */}
+      {showManualForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <Card className="max-h-screen w-full max-w-2xl overflow-y-auto bg-card p-6 shadow-lg">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-foreground">
+                  Add Manual Booking
+                </h2>
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowManualForm(false)}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Passenger Information */}
+              <div>
+                <h3 className="mb-4 text-lg font-semibold text-foreground">
+                  Passenger Information
+                </h3>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <Label
+                      htmlFor="passengerName"
+                      className="text-sm font-medium"
+                    >
+                      Passenger Name
+                    </Label>
+                    <Input
+                      id="passengerName"
+                      name="passengerName"
+                      placeholder="Full name"
+                      value={formData.passengerName}
+                      onChange={handleInputChange}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone" className="text-sm font-medium">
+                      Phone Number
+                    </Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      placeholder="0812-3456-7890"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="email" className="text-sm font-medium">
+                      Email
+                    </Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      placeholder="passenger@example.com"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className="mt-2"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Trip Information */}
+              <div className="border-t border-border pt-4">
+                <h3 className="mb-4 text-lg font-semibold text-foreground">
+                  Trip Information
+                </h3>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <Label htmlFor="tripRoute" className="text-sm font-medium">
+                      Trip Route
+                    </Label>
+                    <Input
+                      id="tripRoute"
+                      name="tripRoute"
+                      placeholder="e.g., Jakarta - Bandung"
+                      value={formData.tripRoute}
+                      onChange={handleInputChange}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="vendor" className="text-sm font-medium">
+                      Vendor
+                    </Label>
+                    <Select
+                      value={formData.vendor}
+                      onValueChange={(value) =>
+                        handleSelectChange("vendor", value)
+                      }
+                    >
+                      <SelectTrigger id="vendor" className="mt-2">
+                        <SelectValue placeholder="Select vendor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="TravelHub Pro">
+                          TravelHub Pro
+                        </SelectItem>
+                        <SelectItem value="Express Travel">
+                          Express Travel
+                        </SelectItem>
+                        <SelectItem value="Comfort Journey">
+                          Comfort Journey
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="tripDate" className="text-sm font-medium">
+                      Trip Date
+                    </Label>
+                    <Input
+                      id="tripDate"
+                      name="tripDate"
+                      type="date"
+                      value={formData.tripDate}
+                      onChange={handleInputChange}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="tripTime" className="text-sm font-medium">
+                      Trip Time
+                    </Label>
+                    <Input
+                      id="tripTime"
+                      name="tripTime"
+                      type="time"
+                      value={formData.tripTime}
+                      onChange={handleInputChange}
+                      className="mt-2"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Booking Details */}
+              <div className="border-t border-border pt-4">
+                <h3 className="mb-4 text-lg font-semibold text-foreground">
+                  Booking Details
+                </h3>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div>
+                    <Label htmlFor="seats" className="text-sm font-medium">
+                      Seat Numbers
+                    </Label>
+                    <Input
+                      id="seats"
+                      name="seats"
+                      placeholder="e.g., 5,6,7"
+                      value={formData.seats}
+                      onChange={handleInputChange}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="passengers" className="text-sm font-medium">
+                      Number of Passengers
+                    </Label>
+                    <Input
+                      id="passengers"
+                      name="passengers"
+                      type="number"
+                      min="1"
+                      value={formData.passengers}
+                      onChange={handleInputChange}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label
+                      htmlFor="totalAmount"
+                      className="text-sm font-medium"
+                    >
+                      Total Amount (Rp)
+                    </Label>
+                    <Input
+                      id="totalAmount"
+                      name="totalAmount"
+                      type="number"
+                      placeholder="0"
+                      value={formData.totalAmount}
+                      onChange={handleInputChange}
+                      className="mt-2"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Status */}
+              <div className="border-t border-border pt-4">
+                <h3 className="mb-4 text-lg font-semibold text-foreground">
+                  Status
+                </h3>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <Label
+                      htmlFor="paymentStatus"
+                      className="text-sm font-medium"
+                    >
+                      Payment Status
+                    </Label>
+                    <Select
+                      value={formData.paymentStatus}
+                      onValueChange={(value) =>
+                        handleSelectChange("paymentStatus", value)
+                      }
+                    >
+                      <SelectTrigger id="paymentStatus" className="mt-2">
+                        <SelectValue placeholder="Select payment status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="Completed">Completed</SelectItem>
+                        <SelectItem value="Failed">Failed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label
+                      htmlFor="bookingStatus"
+                      className="text-sm font-medium"
+                    >
+                      Booking Status
+                    </Label>
+                    <Select
+                      value={formData.bookingStatus}
+                      onValueChange={(value) =>
+                        handleSelectChange("bookingStatus", value)
+                      }
+                    >
+                      <SelectTrigger id="bookingStatus" className="mt-2">
+                        <SelectValue placeholder="Select booking status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="Confirmed">Confirmed</SelectItem>
+                        <SelectItem value="Completed">Completed</SelectItem>
+                        <SelectItem value="Cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Form Actions */}
+              <div className="border-t border-border pt-4 flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowManualForm(false)}
+                  className="flex-1 bg-transparent"
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleAddManualBooking} className="flex-1">
+                  Create Booking
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Filters */}
       <Card className="border-0 bg-card p-6 shadow-sm">

@@ -126,7 +126,7 @@ export function TripCard({
         </div>
       </div>
 
-      <Link href={`/routes/${id}`}>
+      <Link href={`/trips/${id}`}>
         <Button className="w-full bg-primary hover:bg-primary/80 font-semibold">
           Pilih Trip
         </Button>

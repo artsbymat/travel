@@ -3,7 +3,7 @@
 import { useState, Suspense } from "react";
 import { SearchFilters } from "@/components/public/search-filters";
 import { TripCard } from "@/components/public/trip-card";
-import { FormRoute } from "@/components/public/form-route";
+import { FormTrip } from "@/components/public/form-trip";
 
 const mockTrips = [
   {
@@ -106,7 +106,7 @@ function SearchContent() {
 
             {/* Trip Results */}
             <div className="lg:col-span-3">
-              <FormRoute
+              <FormTrip
                 formData={formData}
                 setFormData={setFormData}
                 date={date}

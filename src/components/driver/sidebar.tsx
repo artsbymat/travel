@@ -3,17 +3,11 @@
 import * as React from "react";
 import {
   AudioWaveform,
-  BookUser,
   CircleUserRound,
   Command,
-  Construction,
   GalleryVerticalEnd,
-  Landmark,
   LayoutDashboard,
-  Logs,
-  Route,
   Settings2,
-  Tag,
   Van,
 } from "lucide-react";
 
@@ -91,48 +85,18 @@ const data = {
   projects: [
     {
       name: "Dashboard",
-      url: "/admin",
+      url: "/driver",
       icon: LayoutDashboard,
     },
     {
-      name: "Cars",
-      url: "/admin/cars",
+      name: "My Trips",
+      url: "/driver/trips",
       icon: Van,
     },
     {
-      name: "Drivers",
-      url: "/admin/driver",
-      icon: BookUser,
-    },
-    {
-      name: "Trips",
-      url: "/admin/trips",
-      icon: Route,
-    },
-    {
-      name: "Booking",
-      url: "/admin/booking",
-      icon: Construction,
-    },
-    {
-      name: "Coupons",
-      url: "/admin/coupons",
-      icon: Tag,
-    },
-    {
-      name: "Finance",
-      url: "/admin/finance",
-      icon: Landmark,
-    },
-    {
-      name: "Profil",
-      url: "/admin/profile",
+      name: "Profile",
+      url: "/driver/profile",
       icon: CircleUserRound,
-    },
-    {
-      name: "Logs",
-      url: "/admin/logs",
-      icon: Logs,
     },
   ],
 };

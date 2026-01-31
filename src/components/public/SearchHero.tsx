@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FormRoute } from "./form-route";
+import { FormTrip } from "./form-trip";
 
 export function SearchHero() {
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -25,7 +25,7 @@ export function SearchHero() {
           </p>
         </div>
 
-        <FormRoute
+        <FormTrip
           formData={formData}
           setFormData={setFormData}
           date={date}

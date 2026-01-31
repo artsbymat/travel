@@ -14,7 +14,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { useRouter } from "next/navigation";
 
-export function FormRoute({
+export function FormTrip({
   formData,
   setFormData,
   date,
@@ -51,7 +51,7 @@ export function FormRoute({
       date: formData.date,
       passengers: formData.passengers.toString(),
     }).toString();
-    router.push(`/routes?${queryParams}`);
+    router.push(`/trips?${queryParams}`);
   };
 
   return (

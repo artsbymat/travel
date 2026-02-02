@@ -16,7 +16,7 @@ export default function PassengerPage() {
   const seats = searchParams.get("seats") || "";
   const seatCount = seats.split(",").filter(Boolean).length;
 
-  const [step, setStep] = useState<"passengers" | "locations">("locations");
+  const [step, setStep] = useState<"passengers" | "locations">("passengers");
 
   const [pickupCoordinate, setPickupCoordinate] = useState<LatLngExpression>([
     0, 0,

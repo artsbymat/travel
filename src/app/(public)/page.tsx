@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import Header from "@/components/public/Header";
+import { redirect } from "next/navigation";
 
 export default function Home() {
   const [origin, setOrigin] = useState("");
@@ -13,6 +13,7 @@ export default function Home() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Search:", { origin, destination, date, passengers });
+    redirect("/trips");
   };
 
   const cities = [
@@ -30,7 +31,6 @@ export default function Home() {
 
   return (
     <div className="bg-background text-foreground min-h-screen">
-      <Header />
       <section className="bg-background py-16 md:py-24">
         <div className="mx-auto max-w-3xl px-6 text-center">
           <h1 className="text-foreground mb-6 text-4xl font-light tracking-tight text-pretty md:text-5xl">

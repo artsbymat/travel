@@ -1,3 +1,5 @@
+import Header from "@/components/public/Header";
+
 export default function PublicLayout({
   children
 }: Readonly<{
@@ -5,6 +7,7 @@ export default function PublicLayout({
 }>) {
   return (
     <>
+      <Header />
       <main>{children}</main>
     </>
   );

@@ -92,7 +92,7 @@ Komponen:
 
 - `TripInfo` (seperti di `TripCard` tapi lebih detail)
 - `WarningBox`
-  - "Jika minimal penumpang belum terpenuhi keberangkatan akan dijadwalkan ulang atau dibatalkan."
+  - "Jika minimal penumpang belum terpenuhi keberangkatan akan **dijadwalkan ulang**, **dibatalkan** atau penumpang bisa **dipindahkan ke mobil lain**. Cek halaman status tiket untuk update terbaru." Optional (pake cronjob untuk kirim email kepenumpang)
 - `SeatLayout`
   - Dynamic grid (row/column dari DB)
   - Status:

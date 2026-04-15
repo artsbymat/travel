@@ -1,4 +1,4 @@
-import Header from "@/components/public/Header";
+import Navbar from "@/components/public/Navbar";
 
 export default function PublicLayout({
   children
@@ -7,7 +7,7 @@ export default function PublicLayout({
 }>) {
   return (
     <>
-      <Header />
+      <Navbar />
       <main>{children}</main>
     </>
   );

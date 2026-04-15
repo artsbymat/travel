@@ -127,7 +127,7 @@ Komponen:
 - `CountdownTimer` (expired payment)
 - Button "Bayar"
 
-### Status Tiket (`/status`)
+### Status Tiket (`/ticket`)
 
 Tujuan: Tracking booking tanpa login
 

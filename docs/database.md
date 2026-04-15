@@ -65,8 +65,12 @@ model User {
   phone       String?  @unique
   password    String?
   role        Role
-  vendorId    String?
 
+  isDriver    Boolean @default(false)
+  isStaff     Boolean @default(false)
+  isOwner     Boolean @default(false)
+
+  vendorId    String?
   vendor      Vendor?  @relation(fields: [vendorId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -83,6 +87,12 @@ model Vendor {
   address     String?
   phone       String?
   isActive    Boolean  @default(false)
+  bankInformation Json?
+  province      String?
+  city          String?
+  fullAddress   String?  @db.Text
+  mapLocation   String?  // Untuk link Google Maps atau koordinat
+
 
   users       User[]
   vehicles    Vehicle[]
@@ -270,7 +280,7 @@ model Payment {
   method        PaymentMethod
   status        PaymentStatus @default(PENDING)
 
-  amount        Int
+  amount        Decimal   @db.Decimal(12, 2)
   paidAt        DateTime?
 
   booking       Booking       @relation(fields: [bookingId], references: [id])

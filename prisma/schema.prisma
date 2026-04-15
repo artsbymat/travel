@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -5,4 +8,622 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum Role {
+  SUPER_ADMIN
+  OWNER
+  STAFF
+  DRIVER
+}
+
+enum TripStatus {
+  SCHEDULED
+  ONGOING
+  COMPLETED
+  CANCELLED
+  RESCHEDULED     // Dijadwalkan ulang karena minimal booking tidak terpenuhi
+}
+
+enum VehicleStatus {
+  ACTIVE
+  MAINTENANCE
+  INACTIVE
+}
+
+enum EWalletType {
+  GOPAY
+  OVO
+  DANA
+  SHOPEEPAY
+  LINKAJA
+  OTHER
+}
+
+enum SeatStatus {
+  AVAILABLE     // Kursi tersedia
+  BOOKED        // Sudah dipesan
+  BROKEN        // Rusak
+  BLOCKED       // Diblokir sementara
+}
+
+enum PaymentMethod {
+  CASH
+  EWALLET
+  TRANSFER
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING       // Menunggu konfirmasi
+  PAID
+  REFUNDED
+}
+
+enum BookingStatus {
+  PENDING       // Menunggu pembayaran
+  CONFIRMED     // Sudah konfirmasi
+  CANCELLED     // Dibatalkan
+  COMPLETED     // Selesai perjalanan
+  EXPIRED       // Kadaluarsa (tidak bayar)
+  TRANSFERRED   // Dipindahkan ke trip lain
+  REFUNDED      // Sudah di-refund
+}
+
+enum SettlementStatus {
+  PENDING       // Menunggu settlement
+  SETTLED       // Sudah ditransfer ke vendor
+  HELD          // Ditahan (vendor belum bayar tagihan)
+}
+
+enum BillingStatus {
+  UNPAID        // Belum bayar
+  PARTIAL       // Bayar sebagian
+  PAID          // Lunas
+  OVERDUE       // Lewat jatuh tempo
+}
+
+enum RefundStatus {
+  PENDING       // Menunggu persetujuan
+  APPROVED      // Disetujui, menunggu proses
+  PROCESSING    // Sedang diproses
+  COMPLETED     // Selesai
+  REJECTED      // Ditolak
+}
+
+enum RefundMethod {
+  ORIGINAL      // Kembali ke metode pembayaran asal (e-wallet/transfer)
+  BANK_TRANSFER // Transfer ke rekening customer
+  CASH_PICKUP   // Ambil cash di vendor
+  CREDIT        // Kredit untuk booking berikutnya
+}
+
+enum Amenity {
+  AC            // AC
+  TOLL          // Lewat jalan tol
+  USB           // Port USB charging
+  BLANKET       // Selimut
+  SNACK         // Snack
+  DRINK         // Minuman
+  WIFI          // WiFi
+  TV            // TV/Entertainment
+  TOILET        // Toilet di kendaraan
+  RECLINING_SEAT // Kursi bisa rebahan
+  LEGROOM       // Legroom luas
+  LUGGAGE       // Bagasi besar
+}
+
+enum PolicyType {
+  RESCHEDULE        // Kebijakan perubahan jadwal
+  CANCELLATION      // Kebijakan pembatalan
+  REFUND            // Kebijakan refund
+  LUGGAGE           // Ketentuan barang bawaan
+  DEPARTURE         // Syarat keberangkatan
+  DISCLAIMER        // Penyangkalan
+  OTHER             // Lainnya
+}
+
+// ============================================
+// MODELS
+// ============================================
+
+model Province {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  code      String?  @unique  // Kode provinsi (misal "31" untuk DKI Jakarta)
+
+  // Relations
+  cities    City[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model City {
+  id         String   @id @default(cuid())
+  name       String
+  code       String?  @unique  // Kode kota (misal "3171" untuk Jakarta Pusat)
+
+  // Relasi ke Province
+  provinceId String
+  province   Province @relation(fields: [provinceId], references: [id], onDelete: Cascade)
+
+  // Relations
+  vendors    Vendor[]
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([provinceId, name])  // Nama kota unik per provinsi
+  @@index([provinceId])
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?  @unique
+  phone     String?  @unique
+  password  String?
+  role      Role
+
+  // Relasi ke Vendor (untuk OWNER, STAFF, DRIVER)
+  // SUPER_ADMIN tidak perlu vendorId
+  vendorId  String?
+  vendor    Vendor?  @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+
+  // Relations
+  processedBillingPayments VendorBillingPayment[] @relation("BillingProcessor")
+  processedRefunds         Refund[]               @relation("RefundProcessor")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([vendorId])
+  @@index([role])
+}
+
+model Vendor {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  address     String?
+  
+  // Relasi ke City
+  cityId      String?
+  city        City?    @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  
+  phone       String?
+  email       String?  @unique
+  logo        String?
+  isActive    Boolean  @default(true)
+  isHeld      Boolean  @default(false)  // Ditahan karena belum bayar tagihan
+
+  // Business Info (Opsional)
+  legalName   String?              // Nama badan usaha resmi
+  npwp        String?   @unique    // Nomor NPWP
+  siup        String?              // Nomor SIUP
+  
+  // Tax Settings (Opsional)
+  taxEnabled  Boolean  @default(false)
+  taxRate     Decimal? @db.Decimal(5, 2)  // Persentase pajak (misal 11.00%)
+  taxName     String?  @default("PPN")    // Nama pajak
+
+  // Payment Settings
+  acceptCash  Boolean  @default(true)     // Terima pembayaran cash
+
+  // Platform Fee Settings (bisa override dari global)
+  platformFeeRate Decimal? @db.Decimal(5, 2)  // Persentase fee platform (misal 10.00%)
+
+  // Bank Account untuk settlement
+  bankName      String?
+  bankAccountNo String?
+  bankAccountName String?
+
+  // Relations
+  users       User[]
+  vehicles    Vehicle[]
+  ewallets    VendorEWallet[]
+  billings    VendorBilling[]
+  settlements VendorSettlement[]
+  refundPolicies VendorRefundPolicy[]
+  policies    VendorPolicy[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([cityId])
+  @@index([isActive])
+  @@index([isHeld])
+}
+
+// Syarat & Ketentuan per vendor (teks manual)
+model VendorPolicy {
+  id        String     @id @default(cuid())
+  
+  // Relasi ke Vendor
+  vendorId  String
+  vendor    Vendor     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  type      PolicyType            // Jenis kebijakan
+  title     String                // Judul (misal "Kebijakan Pembatalan, Refund dan Reschedule")
+  content   String     @db.Text   // Isi konten (teks panjang, bisa HTML/Markdown)
+  
+  order     Int        @default(0)      // Urutan tampil
+  isActive  Boolean    @default(true)   // Aktif/tidak
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([vendorId, type])  // 1 vendor 1 jenis policy
+  @@index([vendorId])
+  @@index([type])
+  @@index([isActive])
+}
+
+// Kebijakan refund per vendor (dinamis)
+model VendorRefundPolicy {
+  id                    String   @id @default(cuid())
+  
+  // Relasi ke Vendor
+  vendorId              String
+  vendor                Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  // Aturan
+  hoursBeforeDeparture  Int               // Jam sebelum keberangkatan (misal 24, 12, 6, 1)
+  refundPercentage      Decimal  @db.Decimal(5, 2)  // Persentase refund (misal 100.00, 75.00, 50.00, 10.00)
+  
+  description           String?           // Deskripsi (misal "Refund 75% jika dibatalkan 12 jam sebelum")
+  isActive              Boolean  @default(true)
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([vendorId, hoursBeforeDeparture])  // 1 vendor 1 aturan per jam
+  @@index([vendorId])
+  @@index([isActive])
+}
+
+// E-Wallet yang dimiliki vendor
+model VendorEWallet {
+  id          String      @id @default(cuid())
+  type        EWalletType
+  name        String                    // Nama tampilan (misal "GoPay - Jaya Trans")
+  accountName String                    // Nama pemilik akun
+  accountNo   String                    // Nomor akun/HP
+  isActive    Boolean     @default(true)
+
+  // Relasi ke Vendor
+  vendorId    String
+  vendor      Vendor      @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([vendorId, type, accountNo])  // Prevent duplicate e-wallet
+  @@index([vendorId])
+  @@index([isActive])
+}
+
+model Vehicle {
+  id           String        @id @default(cuid())
+  licensePlate String        @unique // Plat nomor
+  name         String?                // Nama kendaraan (opsional)
+  brand        String                 // Merk (Toyota, Honda, dll)
+  model        String                 // Model (Hiace, Elf, dll)
+  year         Int?                   // Tahun pembuatan
+  capacity     Int                    // Kapasitas penumpang
+  color        String?
+  status       VehicleStatus @default(ACTIVE)
+  imageUrl     String?
+
+  // Seat Layout Template (JSON)
+  // Format: [{"seatNo": "01", "row": 1, "column": 1}, ...]
+  seatLayout   Json?
+
+  // Relasi ke Vendor (Many-to-One)
+  vendorId     String
+  vendor       Vendor        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  // Relations
+  trips        Trip[]
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([vendorId])
+  @@index([status])
+}
+
+model Trip {
+  id              String     @id @default(cuid())
+  
+  // Rute
+  origin          String              // Kota asal
+  destination     String              // Kota tujuan
+  originDetail    String?             // Detail lokasi keberangkatan
+  destinationDetail String?           // Detail lokasi tujuan
+
+  // Waktu
+  departureTime   DateTime            // Waktu berangkat
+  arrivalTime     DateTime?           // Estimasi waktu tiba
+  
+  // Harga
+  price           Decimal   @db.Decimal(12, 2)  // Harga tiket per kursi
+  
+  // Fasilitas
+  amenities       Amenity[] @default([])        // Fasilitas yang tersedia
+  
+  // Minimal Booking
+  minBooking      Int       @default(1)         // Minimal kursi terisi untuk berangkat
+  bookingDeadline DateTime?                     // Batas waktu untuk cek minimal booking
+  
+  status          TripStatus @default(SCHEDULED)
+  notes           String?             // Catatan tambahan
+
+  // Relasi ke Vehicle (Many-to-One)
+  vehicleId       String
+  vehicle         Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  // Relations
+  seats           TripSeat[]
+  bookings        Booking[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([vehicleId])
+  @@index([origin, destination])
+  @@index([departureTime])
+  @@index([status])
+}
+
+// Kursi per Trip (di-generate dari Vehicle seatLayout)
+model TripSeat {
+  id        String     @id @default(cuid())
+  seatNo    String                    // Nomor kursi: "01", "02", dll
+  row       Int                       // Baris (untuk layout)
+  column    Int                       // Kolom (untuk layout)
+  status    SeatStatus @default(AVAILABLE)
+
+  // Relasi ke Trip
+  tripId    String
+  trip      Trip       @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  // Relasi ke Booking (jika sudah dipesan)
+  bookingId String?
+  booking   Booking?   @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([tripId, seatNo])  // 1 trip tidak boleh ada kursi duplikat
+  @@index([tripId])
+  @@index([status])
+  @@index([bookingId])
+}
+
+// Transaksi Pemesanan
+model Booking {
+  id            String        @id @default(cuid())
+  bookingCode   String        @unique  // Kode booking: "TRV-20260415-XXXX"
+
+  // Info Pemesan
+  customerName  String
+  customerPhone String
+  customerEmail String?
+
+  // Relasi ke Trip
+  tripId        String
+  trip          Trip          @relation(fields: [tripId], references: [id], onDelete: Restrict)
+
+  // Kursi yang dipesan
+  seats         TripSeat[]
+
+  // Harga
+  seatCount     Int                     // Jumlah kursi
+  subtotal      Decimal   @db.Decimal(12, 2)  // Harga sebelum pajak
+  taxAmount     Decimal?  @db.Decimal(12, 2)  // Jumlah pajak
+  totalAmount   Decimal   @db.Decimal(12, 2)  // Total bayar
+
+  // Platform Fee Breakdown
+  platformFeeRate   Decimal?  @db.Decimal(5, 2)   // Rate fee saat booking (snapshot)
+  platformFeeAmount Decimal?  @db.Decimal(12, 2)  // Jumlah fee platform
+  vendorAmount      Decimal?  @db.Decimal(12, 2)  // Jumlah yang diterima vendor
+
+  // Pembayaran
+  paymentMethod PaymentMethod
+  paymentStatus PaymentStatus @default(UNPAID)
+  paidAt        DateTime?               // Waktu pembayaran
+
+  // Payment Gateway Info (untuk e-wallet/transfer)
+  pgTransactionId String?               // ID transaksi dari Midtrans/Faspay
+  pgProvider      String?               // "midtrans" / "faspay"
+
+  // Info E-Wallet (jika pakai e-wallet)
+  ewalletType   EWalletType?
+  ewalletName   String?                 // Snapshot nama e-wallet vendor
+  ewalletNo     String?                 // Snapshot nomor e-wallet vendor
+
+  // Status
+  status        BookingStatus @default(PENDING)
+  notes         String?
+  expiresAt     DateTime?               // Batas waktu pembayaran
+
+  // Transfer Booking (jika dipindahkan ke trip lain)
+  transferredFromId String?   @unique          // Booking asal (jika ini hasil transfer)
+  transferredFrom   Booking?  @relation("BookingTransfer", fields: [transferredFromId], references: [id], onDelete: SetNull)
+  transferredTo     Booking?  @relation("BookingTransfer")  // Booking tujuan transfer
+
+  // Relasi ke Billing (untuk pembayaran cash)
+  billingId     String?
+  billing       VendorBilling? @relation(fields: [billingId], references: [id], onDelete: SetNull)
+
+  // Relations
+  refunds       Refund[]
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([tripId])
+  @@index([customerPhone])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([paymentMethod])
+  @@index([billingId])
+  @@index([createdAt])
+}
+
+// Tagihan bulanan platform fee dari pembayaran CASH
+model VendorBilling {
+  id            String        @id @default(cuid())
+  invoiceNo     String        @unique  // "INV-2026-04-001"
+  
+  // Relasi ke Vendor
+  vendorId      String
+  vendor        Vendor        @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+
+  // Periode
+  periodStart   DateTime                // Awal periode (misal 1 April 2026)
+  periodEnd     DateTime                // Akhir periode (misal 30 April 2026)
+  dueDate       DateTime                // Jatuh tempo pembayaran
+
+  // Ringkasan
+  totalBookings     Int                           // Jumlah booking cash
+  totalGrossAmount  Decimal   @db.Decimal(14, 2)  // Total transaksi cash
+  totalFeeAmount    Decimal   @db.Decimal(14, 2)  // Total platform fee yang harus dibayar
+  paidAmount        Decimal   @db.Decimal(14, 2) @default(0)  // Yang sudah dibayar
+  
+  status        BillingStatus @default(UNPAID)
+  notes         String?
+
+  // Relations
+  bookings      Booking[]               // Booking yang masuk tagihan ini
+  payments      VendorBillingPayment[]  // Riwayat pembayaran
+  refundDeductions Refund[]             @relation("RefundDeduction")  // Refund yang dikurangi dari tagihan ini
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([vendorId, periodStart, periodEnd])  // 1 vendor 1 periode 1 tagihan
+  @@index([vendorId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+// Pembayaran tagihan dari vendor ke platform
+model VendorBillingPayment {
+  id          String   @id @default(cuid())
+  
+  // Relasi ke Billing
+  billingId   String
+  billing     VendorBilling @relation(fields: [billingId], references: [id], onDelete: Cascade)
+
+  amount      Decimal  @db.Decimal(14, 2)  // Jumlah yang dibayar
+  method      String                        // "transfer", "cash", dll
+  reference   String?                       // No. referensi/bukti transfer
+  notes       String?
+  paidAt      DateTime @default(now())
+
+  // Siapa yang memproses
+  processedById String?
+  processedBy   User?   @relation("BillingProcessor", fields: [processedById], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime @default(now())
+
+  @@index([billingId])
+}
+
+// Settlement dari platform ke vendor (untuk pembayaran online)
+model VendorSettlement {
+  id            String           @id @default(cuid())
+  settlementNo  String           @unique  // "STL-2026-04-15-001"
+  
+  // Relasi ke Vendor
+  vendorId      String
+  vendor        Vendor           @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+
+  // Periode/Batch
+  periodStart   DateTime
+  periodEnd     DateTime
+
+  // Ringkasan
+  totalBookings     Int                           // Jumlah booking online
+  totalGrossAmount  Decimal   @db.Decimal(14, 2)  // Total transaksi
+  totalFeeAmount    Decimal   @db.Decimal(14, 2)  // Total fee platform (sudah dipotong)
+  totalPgFeeAmount  Decimal   @db.Decimal(14, 2)  // Total fee payment gateway
+  netAmount         Decimal   @db.Decimal(14, 2)  // Yang ditransfer ke vendor
+
+  status        SettlementStatus @default(PENDING)
+  settledAt     DateTime?                         // Waktu transfer
+  reference     String?                           // No. referensi transfer
+  notes         String?
+
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([vendorId])
+  @@index([status])
+  @@index([settledAt])
+}
+
+// Permintaan Refund dari Customer
+model Refund {
+  id              String       @id @default(cuid())
+  refundCode      String       @unique  // "RFD-2026-04-15-001"
+
+  // Relasi ke Booking
+  bookingId       String
+  booking         Booking      @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+
+  // Jumlah
+  originalAmount  Decimal      @db.Decimal(12, 2)  // Jumlah yang dibayar customer
+  refundPercentage Decimal     @db.Decimal(5, 2)   // Persentase refund yang berlaku
+  refundAmount    Decimal      @db.Decimal(12, 2)  // Jumlah yang di-refund
+  adminFee        Decimal?     @db.Decimal(12, 2)  // Biaya admin (opsional)
+  finalAmount     Decimal      @db.Decimal(12, 2)  // Jumlah akhir yang diterima customer
+
+  // Info waktu saat request
+  hoursBeforeDeparture Int               // Berapa jam sebelum keberangkatan saat request
+  departureTime   DateTime              // Snapshot waktu keberangkatan
+  requestedAt     DateTime    @default(now())
+
+  // Metode refund
+  refundMethod    RefundMethod
+  
+  // Info rekening customer (untuk BANK_TRANSFER)
+  customerBankName    String?
+  customerBankAccount String?
+  customerBankAccountName String?
+
+  // Status & tracking
+  status          RefundStatus @default(PENDING)
+  reason          String?               // Alasan refund dari customer
+  rejectionReason String?               // Alasan ditolak (jika REJECTED)
+  notes           String?
+
+  // Waktu proses
+  approvedAt      DateTime?
+  processedAt     DateTime?
+  completedAt     DateTime?
+
+  // Siapa yang memproses
+  processedById   String?
+  processedBy     User?        @relation("RefundProcessor", fields: [processedById], references: [id], onDelete: SetNull)
+
+  // Untuk refund CASH - dikurangi dari billing atau langsung
+  // Jika refund cash, bisa dikurangi dari tagihan vendor berikutnya
+  deductedFromBillingId String?
+  deductedFromBilling   VendorBilling? @relation("RefundDeduction", fields: [deductedFromBillingId], references: [id], onDelete: SetNull)
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([bookingId])
+  @@index([status])
+  @@index([requestedAt])
 }

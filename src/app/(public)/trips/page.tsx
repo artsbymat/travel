@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { TripCard } from "@/components/public/trip-card";
 import { TripFilters } from "@/components/public/trip-filters";
+import { LayoutGrid, List } from "lucide-react";
 
 interface Trip {
   id: string;
@@ -13,214 +14,130 @@ interface Trip {
   duration: string;
   imageUrl: string;
   features: string[];
+  amenities: string[];
   pricePerSeat: number;
   availableSeats: number;
-  departureTimeCategory: "morning" | "afternoon" | "evening";
+  totalSeats: number;
+  vehicleType: string;
+  description: string;
 }
 
 const SAMPLE_TRIPS: Trip[] = [
   {
     id: "1",
-    origin: "Pekanbaru",
-    destination: "Padang",
-    provider: "Express Travel",
+    origin: "Jakarta",
+    destination: "Bandung",
+    provider: "Toyota Hiace Super Grandia",
     departureTime: "08:00 AM",
-    duration: "6 hours",
-    imageUrl: "https://images.unsplash.com/photo-1527786356703-4b100091cd2c?w=600&h=300&fit=crop",
-    features: ["AC", "Reclining Seat", "6 Passengers"],
+    duration: "3 jam",
+    imageUrl: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80",
+    features: ["AC", "WiFi", "Port USB", "Kursi Reclining"],
+    amenities: ["AC", "WiFi", "Port USB", "Kursi Reclining"],
     pricePerSeat: 150000,
-    availableSeats: 3,
-    departureTimeCategory: "morning"
+    availableSeats: 4,
+    totalSeats: 12,
+    vehicleType: "KELAS PREMIUM",
+    description: "Pengalaman perjalanan eksekutif terbaik. Menampilkan kursi kapten khusus, ventilasi AC individual, dan arsitektur kabin kedap suara untuk kenyamanan perjalanan jauh."
   },
   {
     id: "2",
-    origin: "Pekanbaru",
-    destination: "Padang",
-    provider: "Comfort Bus",
-    departureTime: "02:00 PM",
-    duration: "5.5 hours",
-    imageUrl: "https://images.unsplash.com/photo-1527786356703-4b100091cd2c?w=600&h=300&fit=crop",
-    features: ["AC", "WiFi", "USB Charging", "8 Passengers"],
-    pricePerSeat: 175000,
-    availableSeats: 5,
-    departureTimeCategory: "afternoon"
+    origin: "Jakarta",
+    destination: "Bandung",
+    provider: "Toyota Innova Zenix",
+    departureTime: "10:00 AM",
+    duration: "3 jam",
+    imageUrl: "https://images.unsplash.com/photo-1559297434-2d8a134e0428?w=800&q=80",
+    features: ["AC", "WiFi", "Port USB"],
+    amenities: ["AC", "WiFi", "Port USB"],
+    pricePerSeat: 120000,
+    availableSeats: 2,
+    totalSeats: 6,
+    vehicleType: "KELAS BISNIS",
+    description: "Keseimbangan antara kenyamanan dan efisiensi. Sangat cocok untuk pelancong bisnis yang menghargai privasi dan perjalanan yang mulus dengan kursi ergonomis untuk hingga 6 penumpang."
   },
   {
     id: "3",
-    origin: "Pekanbaru",
-    destination: "Padang",
-    provider: "Prime Journey",
-    departureTime: "06:30 PM",
-    duration: "6 hours",
-    imageUrl: "https://images.unsplash.com/photo-1527786356703-4b100091cd2c?w=600&h=300&fit=crop",
-    features: ["AC", "Premium Seats", "Snacks Included", "6 Passengers"],
-    pricePerSeat: 200000,
-    availableSeats: 2,
-    departureTimeCategory: "evening"
-  },
-  {
-    id: "4",
     origin: "Jakarta",
     destination: "Bandung",
-    provider: "Elite Transport",
-    departureTime: "07:00 AM",
-    duration: "3 hours",
-    imageUrl: "https://images.unsplash.com/photo-1527786356703-4b100091cd2c?w=600&h=300&fit=crop",
-    features: ["AC", "Reclining Seat", "Luggage Space", "8 Passengers"],
-    pricePerSeat: 120000,
-    availableSeats: 6,
-    departureTimeCategory: "morning"
-  },
-  {
-    id: "5",
-    origin: "Jakarta",
-    destination: "Bandung",
-    provider: "Express Travel",
+    provider: "Toyota Avanza",
     departureTime: "01:00 PM",
-    duration: "3.5 hours",
-    imageUrl: "https://images.unsplash.com/photo-1527786356703-4b100091cd2c?w=600&h=300&fit=crop",
-    features: ["AC", "WiFi", "Power Outlet", "6 Passengers"],
-    pricePerSeat: 135000,
-    availableSeats: 4,
-    departureTimeCategory: "afternoon"
-  },
-  {
-    id: "6",
-    origin: "Surabaya",
-    destination: "Malang",
-    provider: "Prime Journey",
-    departureTime: "10:00 AM",
-    duration: "2.5 hours",
-    imageUrl: "https://images.unsplash.com/photo-1527786356703-4b100091cd2c?w=600&h=300&fit=crop",
-    features: ["AC", "Comfortable Seats", "Bottled Water", "8 Passengers"],
-    pricePerSeat: 95000,
+    duration: "3.5 jam",
+    imageUrl: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&q=80",
+    features: ["AC"],
+    amenities: ["AC"],
+    pricePerSeat: 80000,
     availableSeats: 7,
-    departureTimeCategory: "morning"
+    totalSeats: 7,
+    vehicleType: "KELAS EKONOMI",
+    description: "Perjalanan yang andal dan esensial. Pilihan kami yang paling hemat biaya untuk perjalanan singkat tanpa mengorbankan standar keselamatan dan perawatan armada."
   }
 ];
 
 export default function TripsPage() {
-  const [minPrice, setMinPrice] = useState(0);
+  const [minPrice, setMinPrice] = useState(50000);
   const [maxPrice, setMaxPrice] = useState(500000);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<"price-low" | "price-high" | "duration">("price-low");
+  const [selectedCapacity, setSelectedCapacity] = useState<string | null>(null);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
 
-  const filteredAndSortedTrips = useMemo(() => {
-    let trips = SAMPLE_TRIPS.filter((trip) => {
+  const filteredTrips = useMemo(() => {
+    return SAMPLE_TRIPS.filter((trip) => {
       const priceMatch = trip.pricePerSeat >= minPrice && trip.pricePerSeat <= maxPrice;
-      const timeMatch = !selectedTime || trip.departureTimeCategory === selectedTime;
-
-      return priceMatch && timeMatch;
+      return priceMatch;
     });
-
-    // Sort trips
-    if (sortBy === "price-low") {
-      trips.sort((a, b) => a.pricePerSeat - b.pricePerSeat);
-    } else if (sortBy === "price-high") {
-      trips.sort((a, b) => b.pricePerSeat - a.pricePerSeat);
-    } else if (sortBy === "duration") {
-      trips.sort((a, b) => parseFloat(a.duration) - parseFloat(b.duration));
-    }
-
-    return trips;
-  }, [minPrice, maxPrice, selectedTime, sortBy]);
+  }, [minPrice, maxPrice, selectedCapacity, selectedAmenities]);
 
   const handleSelectTrip = (tripId: string) => {
     console.log("Selected trip:", tripId);
-    // Navigate to booking page or show modal
   };
 
   return (
-    <div className="bg-background text-foreground min-h-screen">
-      {/* Page Header */}
-      <section className="border-border bg-background border-b py-8">
-        <div className="mx-auto max-w-7xl px-6">
-          <h1 className="mb-2 text-4xl font-light tracking-tight text-pretty">
-            Perjalanan Tersedia
-          </h1>
-          <p className="text-muted-foreground text-pretty">
-            Pilih perjalanan yang sesuai dengan kebutuhanmu, dan nikmati perjalanan antar kota
-            dengan mudah
-          </p>
-        </div>
-      </section>
-
+    <div className="bg-[#F8FAFC] min-h-screen font-sans">
       {/* Main Content */}
-      <div className="mx-auto max-w-7xl px-6 py-8">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-          {/* Filters Sidebar - Hidden on mobile, shown on lg */}
-          <div className="hidden lg:block">
-            <div className="sticky top-24">
-              <TripFilters
-                minPrice={minPrice}
-                maxPrice={maxPrice}
-                onPriceChange={(min, max) => {
-                  setMinPrice(min);
-                  setMaxPrice(max);
-                }}
-                onDepartureTimeChange={setSelectedTime}
-              />
-            </div>
-          </div>
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        <div className="flex flex-col lg:flex-row gap-12">
+          {/* Sidebar */}
+          <aside className="w-full lg:w-72 shrink-0">
+            <TripFilters
+              minPrice={minPrice}
+              maxPrice={maxPrice}
+              onPriceChange={(min, max) => {
+                setMinPrice(min);
+                setMaxPrice(max);
+              }}
+              onCapacityChange={setSelectedCapacity}
+              onAmenitiesChange={setSelectedAmenities}
+              onClearAll={() => {
+                setMinPrice(50000);
+                setMaxPrice(500000);
+                setSelectedCapacity(null);
+                setSelectedAmenities([]);
+              }}
+            />
+          </aside>
 
-          {/* Trips List */}
-          <div className="lg:col-span-3">
-            {/* Sort Control */}
-            <div className="mb-6 flex items-center justify-between">
-              <p className="text-muted-foreground text-sm">
-                Menampilkan {filteredAndSortedTrips.length} perjalanan
-              </p>
-              <div className="flex items-center gap-2">
-                <label htmlFor="sort" className="text-foreground text-sm font-medium">
-                  Urutkan berdasarkan:
-                </label>
-                <select
-                  id="sort"
-                  value={sortBy}
-                  onChange={(e) =>
-                    setSortBy(e.target.value as "price-low" | "price-high" | "duration")
-                  }
-                  className="border-input bg-background text-foreground focus:ring-primary rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
-                >
-                  <option value="price-low">Harga: Rendah ke Tinggi</option>
-                  <option value="price-high">Harga: Tinggi ke Rendah</option>
-                  <option value="duration">Durasi: Terpendek</option>
-                </select>
+          {/* List Section */}
+          <main className="flex-1">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-1">Armada Tersedia</h2>
+                <p className="text-gray-500 text-sm font-medium">
+                  {filteredTrips.length} travel ditemukan untuk anda
+                </p>
               </div>
             </div>
 
-            {/* Trips Grid */}
-            {filteredAndSortedTrips.length > 0 ? (
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {filteredAndSortedTrips.map((trip) => (
+            <div className="space-y-6">
+              {filteredTrips.length > 0 ? (
+                filteredTrips.map((trip) => (
                   <TripCard key={trip.id} {...trip} onSelectTrip={handleSelectTrip} />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-16">
-                <div className="text-center">
-                  <h3 className="text-foreground mb-2 text-lg font-semibold">No trips found</h3>
-                  <p className="text-muted-foreground">
-                    Try adjusting your filters to find available trips
-                  </p>
+                ))
+              ) : (
+                <div className="bg-white rounded-2xl p-20 text-center border border-gray-100">
+                   <p className="text-gray-400 font-bold uppercase tracking-widest">Tidak ada kendaraan yang cocok dengan filter</p>
                 </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Mobile Filters - Shown only on mobile */}
-        <div className="border-border mt-12 border-t pt-8 lg:hidden">
-          <h2 className="text-foreground mb-6 text-lg font-semibold">Filters</h2>
-          <TripFilters
-            minPrice={minPrice}
-            maxPrice={maxPrice}
-            onPriceChange={(min, max) => {
-              setMinPrice(min);
-              setMaxPrice(max);
-            }}
-            onDepartureTimeChange={setSelectedTime}
-          />
+              )}
+            </div>
+          </main>
         </div>
       </div>
     </div>

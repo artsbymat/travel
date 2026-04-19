@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta" });
 
 const jetbrains = JetBrains_Mono({
   variable: "--font-jetbrains",
@@ -23,7 +24,15 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", jetbrains.variable, "font-sans", inter.variable)}
+      className={cn(
+        "h-full",
+        "antialiased",
+        jetbrains.variable,
+        "font-sans",
+        inter.variable,
+        "font-jakarta",
+        jakarta.variable
+      )}
     >
       <body className="flex min-h-full flex-col">{children}</body>
     </html>

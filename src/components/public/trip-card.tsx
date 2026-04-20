@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Wifi, AirVent, Usb, Road } from "lucide-react";
 
 interface TripCardProps {
   id: string;
@@ -9,22 +10,24 @@ interface TripCardProps {
   duration: string;
   imageUrl: string;
   features: string[];
+  amenities: string[];
   pricePerSeat: number;
   availableSeats: number;
+  totalSeats: number;
+  vehicleType: string;
+  description: string;
   onSelectTrip: (tripId: string) => void;
 }
 
 export function TripCard({
   id,
-  origin,
-  destination,
   provider,
-  departureTime,
-  duration,
   imageUrl,
-  features,
+  amenities,
   pricePerSeat,
   availableSeats,
+  totalSeats,
+  vehicleType,
   onSelectTrip
 }: TripCardProps) {
   const formattedPrice = new Intl.NumberFormat("id-ID", {
@@ -34,60 +37,52 @@ export function TripCard({
   }).format(pricePerSeat);
 
   return (
-    <div className="bg-card border-border overflow-hidden rounded-xl border shadow-sm transition-shadow hover:shadow-md">
+    <div className="flex flex-col gap-6 overflow-hidden rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition-all hover:shadow-md md:flex-row">
       {/* Image Section */}
-      <div className="bg-muted h-48 w-full overflow-hidden">
-        <img src={imageUrl} alt={`${provider} minibus`} className="h-full w-full object-cover" />
+      <div className="relative h-48 w-full shrink-0 overflow-hidden rounded-xl md:h-auto md:w-64">
+        <img src={imageUrl} alt={provider} className="h-full w-full object-cover" />
+        <div className="absolute top-3 left-3 rounded bg-teal-600 px-2 py-1 text-[10px] font-bold tracking-wider text-white uppercase">
+          {vehicleType}
+        </div>
       </div>
 
       {/* Content Section */}
-      <div className="space-y-4 p-6">
-        {/* Route and Provider */}
-        <div>
-          <h3 className="text-foreground mb-1 text-lg font-semibold">
-            {origin} → {destination}
-          </h3>
-          <p className="text-muted-foreground text-sm">{provider}</p>
-        </div>
-
-        {/* Time and Duration */}
-        <div className="flex items-center justify-between text-sm">
-          <div>
-            <p className="text-foreground font-medium">{departureTime}</p>
-            <p className="text-muted-foreground text-xs">Keberangkatan</p>
+      <div className="flex flex-1 flex-col justify-between py-1">
+        <div className="space-y-3">
+          {/* Header: Title and Price */}
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-xl leading-tight font-bold text-gray-900">{provider}</h3>
+              {/* Amenities Icons */}
+              <div className="mt-2 flex gap-3 text-gray-500">
+                {amenities.includes("AC") && <AirVent size={16} strokeWidth={2.5} />}
+                {amenities.includes("WiFi") && <Wifi size={16} strokeWidth={2.5} />}
+                {amenities.includes("Port USB") && <Usb size={16} strokeWidth={2.5} />}
+                {amenities.includes("Tol") && <Road size={16} strokeWidth={2.5} />}
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold text-[#0D9488]">{formattedPrice}</p>
+              <p className="text-[10px] font-bold tracking-tighter text-gray-400 uppercase">
+                PER KURSI
+              </p>
+            </div>
           </div>
-          <div className="text-center">
-            <p className="text-muted-foreground">~</p>
-          </div>
-          <div className="text-right">
-            <p className="text-foreground font-medium">{duration}</p>
-            <p className="text-muted-foreground text-xs">Durasi</p>
-          </div>
         </div>
 
-        {/* Features */}
-        <div className="border-border border-t pt-2">
-          <p className="text-foreground text-sm">{features.join(" • ")}</p>
-        </div>
-
-        {/* Available Seats */}
-        <div className="text-sm">
-          <p className="text-muted-foreground">
-            <span className="text-foreground font-medium">{availableSeats}</span> kursi tersedia
-          </p>
-        </div>
-
-        {/* Price and Action */}
-        <div className="border-border flex items-center justify-between border-t pt-2">
-          <div>
-            <p className="text-muted-foreground mb-1 text-xs">Harga per kursi</p>
-            <p className="text-primary text-2xl font-semibold">{formattedPrice}</p>
+        {/* Footer: Seats Available and Action */}
+        <div className="mt-4 flex items-center justify-between border-t border-gray-50 pt-4">
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-[#0D9488]" />
+            <span className="text-xs font-semibold tracking-wide text-gray-600 uppercase">
+              Kursi Tersedia {availableSeats}/{totalSeats}
+            </span>
           </div>
           <Button
             onClick={() => onSelectTrip(id)}
-            className="bg-primary hover:bg-primary/90 font-medium text-white"
+            className="rounded-xl bg-[#8B5E02] px-8 py-5 text-xs font-bold tracking-widest text-white uppercase shadow-lg shadow-amber-900/20 hover:bg-[#744E02]"
           >
-            Pilih
+            PESAN KURSI
           </Button>
         </div>
       </div>

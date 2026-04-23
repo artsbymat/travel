@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "db:seed": "prisma db seed",
     "lint": "eslint",
     "format": "prettier --write --plugin prettier-plugin-tailwindcss ./src"
   },

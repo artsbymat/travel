@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-import { cn } from "@/lib/utils";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-jakarta",
   display: "swap",
-  weight: ["400", "500", "700"] // sesuaikan kebutuhan
+  weight: ["400", "500", "600", "700", "800"] // sesuaikan kebutuhan
 });
 
 export const metadata: Metadata = {
@@ -22,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={jakarta.variable}>
-      <body className="flex min-h-full flex-col font-jakarta">{children}</body>
+      <body className="font-jakarta flex min-h-full flex-col">{children}</body>
     </html>
   );
 }

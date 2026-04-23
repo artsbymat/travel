@@ -65,11 +65,13 @@ export const authOptions = {
         }) {
             if (user) {
                 token.id = user.id;
+                token.role = user.role; // persist role into JWT
             }
             return token;
         },
         async session({ session, token }: { session: any; token: JWT }) {
             session.user.id = token.id;
+            session.user.role = token.role; // expose role to session
             return session;
         },
     },

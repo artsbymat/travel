@@ -12,7 +12,7 @@ export async function withAuth(
     req: NextRequest,
     options?: AuthOptions
 ) {
-    const token = await getToken({ req });
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
     // ❌ belum login
     if (!token) {

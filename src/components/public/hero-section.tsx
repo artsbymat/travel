@@ -45,7 +45,7 @@ export default function HeroSection() {
   ];
 
   return (
-    <section className="relative flex min-h-[calc(100vh-64px)] items-center bg-[#F5FAF8] md:min-h-[calc(100vh-256px)]">
+    <section className="relative flex min-h-[calc(100vh-65px)] items-center bg-[#F5FAF8]">
       <div className="bg-primary absolute top-24 left-16 z-5 hidden h-24 w-[20rem] rounded-4xl blur-3xl md:block" />
       <div className="bg-accent-2 absolute right-16 bottom-24 z-5 hidden h-24 w-64 rounded-4xl blur-3xl md:block" />
       <div className="z-10 mx-auto flex flex-col items-center gap-12 px-4">

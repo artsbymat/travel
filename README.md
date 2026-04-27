@@ -5,14 +5,18 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 First, run the development server:
 
 ```bash
-docker pull postgres:18
+docker pull postgres:16-alpine
 #or
-podman pull postgres:18
+podman pull postgres:16-alpine
 ```
 
 ```bash
 docker-compose up -d
 npx prisma migrate dev
+```
+
+```bash
+npx tsx prisma/seed-indonesia.ts
 ```
 
 ```bash

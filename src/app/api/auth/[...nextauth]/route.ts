@@ -1,30 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { prisma } from "@/lib/prisma";
 import { JWT } from 'next-auth/jwt';
 import { compare } from "bcrypt";
-
-let prisma: PrismaClient | undefined;
-
-function getPrismaClient() {
-    if (prisma) {
-        return prisma;
-    }
-
-    const connectionString = process.env.DATABASE_URL;
-
-    if (!connectionString) {
-        throw new Error("DATABASE_URL is not set");
-    }
-
-    prisma = new PrismaClient({
-        adapter: new PrismaPg({ connectionString }),
-    });
-
-    return prisma;
-}
 
 export const authOptions = {
     session: {
@@ -44,7 +23,7 @@ export const authOptions = {
                 if (!credentials) {
                     return null; // Jika credentials tidak ada, kembalikan null
                 }
-                const user = await getPrismaClient().user.findUnique({
+                const user = await prisma.user.findUnique({
                     where: { email: credentials.email },
                 });
 

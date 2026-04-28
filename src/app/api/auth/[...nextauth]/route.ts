@@ -44,13 +44,17 @@ export const authOptions = {
         }) {
             if (user) {
                 token.id = user.id;
-                token.role = user.role; // persist role into JWT
+                token.role = user.role;
+                token.vendorId = user.vendorId;
             }
             return token;
         },
         async session({ session, token }: { session: any; token: JWT }) {
-            session.user.id = token.id;
-            session.user.role = token.role; // expose role to session
+            if (session.user) {
+                session.user.id = token.id;
+                session.user.role = token.role;
+                session.user.vendorId = token.vendorId;
+            }
             return session;
         },
     },

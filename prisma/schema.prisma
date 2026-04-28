@@ -42,6 +42,7 @@ model User {
   processedRefunds         Refund[]               @relation("RefundProcessor")
   vendor                   Vendor?                @relation(fields: [vendorId], references: [id])
   processedBillingPayments VendorBillingPayment[] @relation("BillingProcessor")
+  driverTrips              Trip[]                 @relation("DriverTrips")
 
   @@index([vendorId])
   @@index([role])
@@ -174,13 +175,16 @@ model Trip {
   status            TripStatus @default(SCHEDULED)
   notes             String?
   vehicleId         String
+  driverId          String?
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
   bookings          Booking[]
   vehicle           Vehicle    @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver            User?      @relation("DriverTrips", fields: [driverId], references: [id])
   seats             TripSeat[]
 
   @@index([vehicleId])
+  @@index([driverId])
   @@index([origin, destination])
   @@index([departureTime])
   @@index([status])

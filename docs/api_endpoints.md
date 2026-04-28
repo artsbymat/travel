@@ -210,3 +210,69 @@ Mengambil daftar kota. Bisa difilter berdasarkan ID Provinsi.
   }
 ]
 ```
+
+---
+
+## 5. Driver Endpoints
+Endpoint untuk manajemen akun Driver yang terasosiasi dengan Vendor.
+
+### 5.1 List All Drivers
+Mengambil semua user dengan role `DRIVER`. Bisa difilter berdasarkan `vendorId`.
+
+- **URL:** `/api/admin/drivers`
+- **Method:** `GET`
+- **Query Params:**
+    - `vendorId` (Optional): Filter driver berdasarkan vendor tertentu.
+- **Response Success (200 OK):**
+```json
+[
+  {
+    "id": "user-id-driver",
+    "name": "Slamet Rahardjo",
+    "email": "slamet@travel.com",
+    "phone": "0812334455",
+    "role": "DRIVER",
+    "vendorId": "vendor-id-1",
+    "vendor": {
+      "id": "vendor-id-1",
+      "name": "Sinar Jaya"
+    },
+    "_count": {
+      "driverTrips": 15
+    }
+  }
+]
+```
+
+### 5.2 Create Driver
+Menambahkan akun Driver baru.
+
+- **URL:** `/api/admin/drivers`
+- **Method:** `POST`
+- **Payload (JSON):**
+| Field | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `name` | string | Yes | Nama lengkap driver |
+| `vendorId` | string | Yes | ID Vendor tempat driver bekerja |
+| `email` | string | No | Email login |
+| `phone` | string | No | Nomor telepon |
+| `password` | string | No | Password login |
+
+- **Example Payload:**
+```json
+{
+  "name": "Bambang Pamungkas",
+  "vendorId": "cm123-vendor-id",
+  "phone": "0812998877",
+  "email": "bambang@travel.id"
+}
+```
+
+### 5.3 Update Driver
+- **URL:** `/api/admin/drivers/[id]`
+- **Method:** `PATCH`
+- **Payload:** `name`, `email`, `phone`, `password`, `vendorId` (Optional).
+
+### 5.4 Delete Driver
+- **URL:** `/api/admin/drivers/[id]`
+- **Method:** `DELETE`

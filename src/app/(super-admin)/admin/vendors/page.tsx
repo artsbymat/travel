@@ -1,19 +1,19 @@
 import { AdminQueryProvider } from "@/components/admin/admin-query-provider";
-import { OwnersManager } from "@/components/admin/owners-manager";
+import { VendorsManager } from "@/components/admin/vendors-manager";
 
-export default function AdminOwnersPage() {
+export default function AdminVendors() {
   return (
     <div className="scaffold-page">
       <div className="scaffold-header">
-        <h1 className="scaffold-title">Manajemen Owner</h1>
+        <h1 className="scaffold-title">Manajemen Vendor</h1>
         <p className="scaffold-subtitle">
-          Buat dan kelola akun owner yang bertanggung jawab atas masing-masing
-          vendor.
+          Kelola data travel, status operasional, biaya platform, dan informasi
+          pencairan vendor.
         </p>
       </div>
 
       <AdminQueryProvider>
-        <OwnersManager />
+        <VendorsManager />
       </AdminQueryProvider>
     </div>
   );

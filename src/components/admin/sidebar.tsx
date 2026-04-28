@@ -35,23 +35,17 @@ const data = {
     },
     {
       title: "Vendor",
-      url: "#",
+      url: "/admin/vendors",
       icon: <Building2 />,
+      isActive: true,
       items: [
         {
           title: "Kelola Vendor",
-          url: "#"
-        }
-      ]
-    },
-    {
-      title: "Pengguna",
-      url: "/users",
-      icon: <BookUser />,
-      items: [
+          url: "/admin/vendors#manage"
+        },
         {
-          title: "Kelola Pengguna",
-          url: "/users#manage"
+          title: "Kelola Owner",
+          url: "/admin/owners#manage"
         }
       ]
     },

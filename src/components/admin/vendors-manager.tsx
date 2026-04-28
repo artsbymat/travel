@@ -5,6 +5,17 @@ import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Pencil, Plus, RefreshCw, Trash2, Users, Bus } from "lucide-react";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Combobox,
@@ -305,6 +316,7 @@ function RegionCombobox<TItem extends { id: string; name: string }>({
 export function VendorsManager() {
   const queryClient = useQueryClient();
   const [editingVendorId, setEditingVendorId] = useState<string | null>(null);
+  const [vendorToDelete, setVendorToDelete] = useState<VendorRecord | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
 
@@ -326,9 +338,6 @@ export function VendorsManager() {
   const vendors = vendorsQuery.data ?? EMPTY_VENDORS;
   const provinces = provincesQuery.data ?? EMPTY_PROVINCES;
   const cities = citiesQuery.data ?? EMPTY_CITIES;
-  const editingVendor =
-    vendors.find((vendor) => vendor.id === editingVendorId) ?? null;
-
   const form = useForm({
     defaultValues: defaultVendorValues,
     onSubmit: async ({ value }) => {
@@ -429,13 +438,57 @@ export function VendorsManager() {
     }
   }, [filteredCities, form, selectedCityId, selectedProvinceId]);
 
-  useEffect(() => {
-    if (!cities.length) {
+  function resetVendorForm() {
+    setEditingVendorId(null);
+    form.reset(defaultVendorValues);
+    setSubmitError(null);
+    setSubmitSuccess(null);
+  }
+
+  function populateVendorForm(values: VendorFormValues) {
+    form.setFieldValue("name", values.name);
+    form.setFieldValue("slug", values.slug);
+    form.setFieldValue("email", values.email);
+    form.setFieldValue("phone", values.phone);
+    form.setFieldValue("provinceId", values.provinceId);
+    form.setFieldValue("cityId", values.cityId);
+    form.setFieldValue("address", values.address);
+    form.setFieldValue("description", values.description);
+    form.setFieldValue("legalName", values.legalName);
+    form.setFieldValue("npwp", values.npwp);
+    form.setFieldValue("siup", values.siup);
+    form.setFieldValue("taxEnabled", values.taxEnabled);
+    form.setFieldValue("taxRate", values.taxRate);
+    form.setFieldValue("taxName", values.taxName);
+    form.setFieldValue("platformFeeRate", values.platformFeeRate);
+    form.setFieldValue("acceptCash", values.acceptCash);
+    form.setFieldValue("isActive", values.isActive);
+    form.setFieldValue("isHeld", values.isHeld);
+    form.setFieldValue("bankName", values.bankName);
+    form.setFieldValue("bankAccountNo", values.bankAccountNo);
+    form.setFieldValue("bankAccountName", values.bankAccountName);
+  }
+
+  function startEditVendor(vendor: VendorRecord) {
+    setEditingVendorId(vendor.id);
+    const values = toVendorFormValues(vendor, cities);
+    form.reset(values);
+    populateVendorForm(values);
+    setSubmitError(null);
+    setSubmitSuccess(null);
+  }
+
+  async function confirmDeleteVendor() {
+    if (!vendorToDelete) {
       return;
     }
 
-    form.reset(toVendorFormValues(editingVendor, cities));
-  }, [cities, editingVendor, form]);
+    await deleteVendorMutation.mutateAsync(vendorToDelete.id);
+    if (editingVendorId === vendorToDelete.id) {
+      resetVendorForm();
+    }
+    setVendorToDelete(null);
+  }
 
   const loading = vendorsQuery.isLoading || provincesQuery.isLoading || citiesQuery.isLoading;
   const loadingError =
@@ -539,11 +592,7 @@ export function VendorsManager() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => {
-                      setEditingVendorId(vendor.id);
-                      setSubmitError(null);
-                      setSubmitSuccess(null);
-                    }}
+                    onClick={() => startEditVendor(vendor)}
                   >
                     <Pencil className="size-4" />
                     Edit
@@ -551,7 +600,7 @@ export function VendorsManager() {
                   <Button
                     type="button"
                     variant="destructive"
-                    onClick={() => deleteVendorMutation.mutate(vendor.id)}
+                    onClick={() => setVendorToDelete(vendor)}
                     disabled={deleteVendorMutation.isPending}
                   >
                     <Trash2 className="size-4" />
@@ -578,12 +627,7 @@ export function VendorsManager() {
             <Button
               type="button"
               variant="ghost"
-              onClick={() => {
-                setEditingVendorId(null);
-                form.reset(defaultVendorValues);
-                setSubmitError(null);
-                setSubmitSuccess(null);
-              }}
+              onClick={resetVendorForm}
             >
               <Plus className="size-4" />
               Mode Baru
@@ -1034,12 +1078,7 @@ export function VendorsManager() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                setEditingVendorId(null);
-                form.reset(defaultVendorValues);
-                setSubmitError(null);
-                setSubmitSuccess(null);
-              }}
+              onClick={resetVendorForm}
             >
               Reset
             </Button>
@@ -1049,6 +1088,43 @@ export function VendorsManager() {
           </div>
         </form>
       </section>
+
+      <AlertDialog
+        open={Boolean(vendorToDelete)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setVendorToDelete(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogMedia>
+              <Trash2 />
+            </AlertDialogMedia>
+            <AlertDialogTitle>Hapus vendor?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {vendorToDelete
+                ? `Vendor ${vendorToDelete.name} akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.`
+                : "Data vendor akan dihapus permanen."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteVendorMutation.isPending}>
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                void confirmDeleteVendor();
+              }}
+              disabled={deleteVendorMutation.isPending}
+            >
+              Hapus Vendor
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

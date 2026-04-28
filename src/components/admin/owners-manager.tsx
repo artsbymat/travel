@@ -1,10 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Mail, Pencil, Phone, Plus, RefreshCw, Trash2, UserRound } from "lucide-react";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Combobox,
@@ -132,6 +143,36 @@ function toOwnerPayload(
   };
 }
 
+function validateOwnerPassword(value: string, isEditing: boolean) {
+  const trimmedValue = value.trim();
+
+  if (!isEditing) {
+    if (!trimmedValue) {
+      return "Password wajib diisi.";
+    }
+
+    if (trimmedValue.length < 6) {
+      return "Password minimal 6 karakter.";
+    }
+
+    return undefined;
+  }
+
+  if (trimmedValue && trimmedValue.length < 6) {
+    return "Password baru minimal 6 karakter.";
+  }
+
+  return undefined;
+}
+
+function validateNewOwnerPassword(value: string) {
+  return validateOwnerPassword(value, false);
+}
+
+function validateEditedOwnerPassword(value: string) {
+  return validateOwnerPassword(value, true);
+}
+
 function VendorCombobox({
   vendors,
   value,
@@ -177,6 +218,7 @@ function VendorCombobox({
 export function OwnersManager() {
   const queryClient = useQueryClient();
   const [editingOwnerId, setEditingOwnerId] = useState<string | null>(null);
+  const [ownerToDelete, setOwnerToDelete] = useState<OwnerRecord | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
 
@@ -195,9 +237,6 @@ export function OwnersManager() {
 
   const owners = ownersQuery.data ?? EMPTY_OWNERS;
   const vendors = vendorsQuery.data ?? EMPTY_VENDORS;
-  const editingOwner =
-    owners.find((owner) => owner.id === editingOwnerId) ?? null;
-
   const form = useForm({
     defaultValues: defaultOwnerValues,
     onSubmit: async ({ value }) => {
@@ -276,9 +315,41 @@ export function OwnersManager() {
     },
   });
 
-  useEffect(() => {
-    form.reset(toOwnerFormValues(editingOwner));
-  }, [editingOwner, form]);
+  function resetOwnerForm() {
+    setEditingOwnerId(null);
+    form.reset(defaultOwnerValues);
+    setSubmitError(null);
+    setSubmitSuccess(null);
+  }
+
+  function populateOwnerForm(values: OwnerFormValues) {
+    form.setFieldValue("name", values.name);
+    form.setFieldValue("email", values.email);
+    form.setFieldValue("phone", values.phone);
+    form.setFieldValue("password", values.password);
+    form.setFieldValue("vendorId", values.vendorId);
+  }
+
+  function startEditOwner(owner: OwnerRecord) {
+    setEditingOwnerId(owner.id);
+    const values = toOwnerFormValues(owner);
+    form.reset(values);
+    populateOwnerForm(values);
+    setSubmitError(null);
+    setSubmitSuccess(null);
+  }
+
+  async function confirmDeleteOwner() {
+    if (!ownerToDelete) {
+      return;
+    }
+
+    await deleteOwnerMutation.mutateAsync(ownerToDelete.id);
+    if (editingOwnerId === ownerToDelete.id) {
+      resetOwnerForm();
+    }
+    setOwnerToDelete(null);
+  }
 
   const loading = ownersQuery.isLoading || vendorsQuery.isLoading;
   const loadingError = ownersQuery.error?.message || vendorsQuery.error?.message;
@@ -368,11 +439,7 @@ export function OwnersManager() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => {
-                      setEditingOwnerId(owner.id);
-                      setSubmitError(null);
-                      setSubmitSuccess(null);
-                    }}
+                    onClick={() => startEditOwner(owner)}
                   >
                     <Pencil className="size-4" />
                     Edit
@@ -380,7 +447,7 @@ export function OwnersManager() {
                   <Button
                     type="button"
                     variant="destructive"
-                    onClick={() => deleteOwnerMutation.mutate(owner.id)}
+                    onClick={() => setOwnerToDelete(owner)}
                     disabled={deleteOwnerMutation.isPending}
                   >
                     <Trash2 className="size-4" />
@@ -407,12 +474,7 @@ export function OwnersManager() {
             <Button
               type="button"
               variant="ghost"
-              onClick={() => {
-                setEditingOwnerId(null);
-                form.reset(defaultOwnerValues);
-                setSubmitError(null);
-                setSubmitSuccess(null);
-              }}
+              onClick={resetOwnerForm}
             >
               <Plus className="size-4" />
               Mode Baru
@@ -540,45 +602,59 @@ export function OwnersManager() {
                 )}
               </form.Field>
 
-              <form.Field
-                name="password"
-                validators={{
-                  onChange: ({ value }) => {
-                    if (!editingOwnerId && value.length < 6) {
-                      return "Password minimal 6 karakter.";
-                    }
-
-                    if (editingOwnerId && value && value.length < 6) {
-                      return "Password baru minimal 6 karakter.";
-                    }
-
-                    return undefined;
-                  },
-                }}
-              >
-                {(field) => (
-                  <Field>
-                    <FieldLabel htmlFor={field.name}>
-                      {editingOwnerId ? "Password Baru" : "Password"}
-                    </FieldLabel>
-                    <FieldContent>
-                      <Input
-                        id={field.name}
-                        type="password"
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(event) => field.handleChange(event.target.value)}
-                        placeholder={
-                          editingOwnerId
-                            ? "Kosongkan bila tidak diubah"
-                            : "Minimal 6 karakter"
-                        }
-                      />
-                      <FieldError errors={toFieldErrors(field.state.meta.errors)} />
-                    </FieldContent>
-                  </Field>
-                )}
-              </form.Field>
+              {editingOwnerId ? (
+                <form.Field
+                  key="edit-password"
+                  name="password"
+                  validators={{
+                    onChange: ({ value }) => validateEditedOwnerPassword(value),
+                    onSubmit: ({ value }) => validateEditedOwnerPassword(value),
+                  }}
+                >
+                  {(field) => (
+                    <Field>
+                      <FieldLabel htmlFor={field.name}>Password Baru</FieldLabel>
+                      <FieldContent>
+                        <Input
+                          id={field.name}
+                          type="password"
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(event) => field.handleChange(event.target.value)}
+                          placeholder="Kosongkan bila tidak diubah"
+                        />
+                        <FieldError errors={toFieldErrors(field.state.meta.errors)} />
+                      </FieldContent>
+                    </Field>
+                  )}
+                </form.Field>
+              ) : (
+                <form.Field
+                  key="create-password"
+                  name="password"
+                  validators={{
+                    onChange: ({ value }) => validateNewOwnerPassword(value),
+                    onSubmit: ({ value }) => validateNewOwnerPassword(value),
+                  }}
+                >
+                  {(field) => (
+                    <Field>
+                      <FieldLabel htmlFor={field.name}>Password</FieldLabel>
+                      <FieldContent>
+                        <Input
+                          id={field.name}
+                          type="password"
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(event) => field.handleChange(event.target.value)}
+                          placeholder="Minimal 6 karakter"
+                        />
+                        <FieldError errors={toFieldErrors(field.state.meta.errors)} />
+                      </FieldContent>
+                    </Field>
+                  )}
+                </form.Field>
+              )}
             </FieldGroup>
           </FieldSet>
 
@@ -586,12 +662,7 @@ export function OwnersManager() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                setEditingOwnerId(null);
-                form.reset(defaultOwnerValues);
-                setSubmitError(null);
-                setSubmitSuccess(null);
-              }}
+              onClick={resetOwnerForm}
             >
               Reset
             </Button>
@@ -601,6 +672,43 @@ export function OwnersManager() {
           </div>
         </form>
       </section>
+
+      <AlertDialog
+        open={Boolean(ownerToDelete)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setOwnerToDelete(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogMedia>
+              <Trash2 />
+            </AlertDialogMedia>
+            <AlertDialogTitle>Hapus owner?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {ownerToDelete
+                ? `Akun owner ${ownerToDelete.name} akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.`
+                : "Akun owner akan dihapus permanen."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteOwnerMutation.isPending}>
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                void confirmDeleteOwner();
+              }}
+              disabled={deleteOwnerMutation.isPending}
+            >
+              Hapus Owner
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

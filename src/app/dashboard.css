@@ -334,20 +334,30 @@
 }
 
 .scaffold-header {
-    margin-bottom: 2rem;
+    margin-bottom: 2.5rem;
+    position: relative;
 }
 
 .scaffold-title {
-    font-size: 1.65rem;
-    font-weight: 800;
+    font-size: 2.25rem;
+    font-weight: 900;
     color: #0f172a;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.05em;
+    line-height: 1;
+    background: linear-gradient(135deg, #0f172a 0%, #334155 50%, #475569 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));
 }
 
 .scaffold-subtitle {
-    margin-top: 0.3rem;
-    font-size: 0.9rem;
+    margin-top: 0.75rem;
+    font-size: 1rem;
     color: #64748b;
+    font-weight: 500;
+    max-width: 650px;
+    line-height: 1.6;
+    letter-spacing: -0.01em;
 }
 
 .scaffold-stats {

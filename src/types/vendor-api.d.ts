@@ -17,9 +17,6 @@ export interface VendorCreatePayload {
   taxName?: string;
   acceptCash?: boolean;
   platformFeeRate?: number;
-  bankName?: string;
-  bankAccountNo?: string;
-  bankAccountName?: string;
 }
 
 export interface VendorUpdatePayload {
@@ -41,9 +38,6 @@ export interface VendorUpdatePayload {
   taxName?: string;
   acceptCash?: boolean;
   platformFeeRate?: number;
-  bankName?: string;
-  bankAccountNo?: string;
-  bankAccountName?: string;
 }
 
 export interface Vendor {
@@ -66,9 +60,6 @@ export interface Vendor {
   taxName?: string;
   acceptCash: boolean;
   platformFeeRate?: number;
-  bankName?: string;
-  bankAccountNo?: string;
-  bankAccountName?: string;
   createdAt: string;
   updatedAt: string;
   _count?: {

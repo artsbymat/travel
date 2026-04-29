@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "Booking" ADD COLUMN     "pickupLat" DOUBLE PRECISION,
+ADD COLUMN     "pickupLng" DOUBLE PRECISION;
+
+-- AlterTable
+ALTER TABLE "Trip" ADD COLUMN     "originLat" DOUBLE PRECISION,
+ADD COLUMN     "originLng" DOUBLE PRECISION;

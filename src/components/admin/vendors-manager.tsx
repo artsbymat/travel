@@ -87,9 +87,6 @@ type VendorFormValues = {
   acceptCash: boolean;
   isActive: boolean;
   isHeld: boolean;
-  bankName: string;
-  bankAccountNo: string;
-  bankAccountName: string;
 };
 
 const vendorKeys = {
@@ -120,9 +117,6 @@ const defaultVendorValues: VendorFormValues = {
   acceptCash: true,
   isActive: true,
   isHeld: false,
-  bankName: "",
-  bankAccountNo: "",
-  bankAccountName: "",
 };
 
 const EMPTY_VENDORS: VendorRecord[] = [];
@@ -185,9 +179,6 @@ function toVendorFormValues(vendor?: VendorRecord | null, cities: City[] = []): 
     acceptCash: vendor.acceptCash ?? true,
     isActive: vendor.isActive ?? true,
     isHeld: vendor.isHeld ?? false,
-    bankName: vendor.bankName ?? "",
-    bankAccountNo: vendor.bankAccountNo ?? "",
-    bankAccountName: vendor.bankAccountName ?? "",
   };
 }
 
@@ -214,9 +205,6 @@ function toVendorPayload(values: VendorFormValues): VendorCreatePayload | Vendor
     acceptCash: values.acceptCash,
     isActive: values.isActive,
     isHeld: values.isHeld,
-    bankName: values.bankName.trim() || undefined,
-    bankAccountNo: values.bankAccountNo.trim() || undefined,
-    bankAccountName: values.bankAccountName.trim() || undefined,
   };
 }
 
@@ -464,9 +452,6 @@ export function VendorsManager() {
     form.setFieldValue("acceptCash", values.acceptCash);
     form.setFieldValue("isActive", values.isActive);
     form.setFieldValue("isHeld", values.isHeld);
-    form.setFieldValue("bankName", values.bankName);
-    form.setFieldValue("bankAccountNo", values.bankAccountNo);
-    form.setFieldValue("bankAccountName", values.bankAccountName);
   }
 
   function startEditVendor(vendor: VendorRecord) {
@@ -926,57 +911,6 @@ export function VendorsManager() {
                 </form.Field>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <form.Field name="bankName">
-                  {(field) => (
-                    <Field>
-                      <FieldLabel htmlFor={field.name}>Nama Bank</FieldLabel>
-                      <FieldContent>
-                        <Input
-                          id={field.name}
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(event) => field.handleChange(event.target.value)}
-                          placeholder="BCA"
-                        />
-                      </FieldContent>
-                    </Field>
-                  )}
-                </form.Field>
-                <form.Field name="bankAccountNo">
-                  {(field) => (
-                    <Field>
-                      <FieldLabel htmlFor={field.name}>Nomor Rekening</FieldLabel>
-                      <FieldContent>
-                        <Input
-                          id={field.name}
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(event) => field.handleChange(event.target.value)}
-                          placeholder="1234567890"
-                        />
-                      </FieldContent>
-                    </Field>
-                  )}
-                </form.Field>
-              </div>
-
-              <form.Field name="bankAccountName">
-                {(field) => (
-                  <Field>
-                    <FieldLabel htmlFor={field.name}>Nama Pemilik Rekening</FieldLabel>
-                    <FieldContent>
-                      <Input
-                        id={field.name}
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(event) => field.handleChange(event.target.value)}
-                        placeholder="PT Contoh Transport"
-                      />
-                    </FieldContent>
-                  </Field>
-                )}
-              </form.Field>
 
               <div className="grid gap-3">
                 <form.Field name="taxEnabled">

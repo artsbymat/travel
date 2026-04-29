@@ -16,9 +16,6 @@ export async function GET(
       where: { id, role: Role.DRIVER },
       include: {
         vendor: true,
-        _count: {
-          select: { driverTrips: true },
-        },
       },
     });
 

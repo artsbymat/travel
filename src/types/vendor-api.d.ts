@@ -66,4 +66,10 @@ export interface Vendor {
     users: number;
     vehicles: number;
   };
+  wallet?: {
+    balance: number;
+    debt: number;
+    pendingIn: number;
+    totalEarned: number;
+  } | null;
 }

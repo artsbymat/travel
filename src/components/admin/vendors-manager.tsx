@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Pencil, Plus, RefreshCw, Trash2, Users, Bus } from "lucide-react";
+import { Building2, Pencil, Plus, RefreshCw, Trash2, Users, Bus, Wallet } from "lucide-react";
 
 import {
   AlertDialog,
@@ -48,7 +48,7 @@ import {
 } from "@/components/ui/item";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import type { Vendor, VendorCreatePayload, VendorUpdatePayload } from "@/types/vendor-api";
 
 type Province = {
@@ -552,7 +552,16 @@ export function VendorsManager() {
                   </div>
                 </ItemHeader>
 
-                <div className="grid w-full gap-3 text-sm text-muted-foreground md:grid-cols-3">
+                <div className="grid w-full gap-3 text-sm text-muted-foreground md:grid-cols-4">
+                  <div className="rounded-2xl bg-muted/40 px-3 py-2">
+                    <div className="mb-1 flex items-center gap-2 font-medium text-foreground">
+                      <Wallet className="size-4" />
+                      Saldo Wallet
+                    </div>
+                    <div className="font-semibold text-primary">
+                      {formatCurrency(vendor.wallet?.balance ?? 0)}
+                    </div>
+                  </div>
                   <div className="rounded-2xl bg-muted/40 px-3 py-2">
                     <div className="mb-1 flex items-center gap-2 font-medium text-foreground">
                       <Users className="size-4" />

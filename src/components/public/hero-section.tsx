@@ -36,14 +36,6 @@ export default function HeroSection() {
     router.push(`/trips?${query.toString()}`);
   };
 
-  const cities: City[] = [
-    { code: "JKT", name: "Jakarta", province: "DKI Jakarta" },
-    { code: "BDG", name: "Bandung", province: "West Java" },
-    { code: "SBY", name: "Surabaya", province: "East Java" },
-    { code: "DPS", name: "Denpasar", province: "Bali" },
-    { code: "MLG", name: "Malang", province: "East Java" }
-  ];
-
   return (
     <section className="relative flex min-h-[calc(100vh-65px)] items-center bg-[#F5FAF8]">
       <div className="bg-primary absolute top-24 left-16 z-5 hidden h-24 w-[20rem] rounded-4xl blur-3xl md:block" />
@@ -75,7 +67,6 @@ export default function HeroSection() {
             </label>
             <ComboboxCitySearch
               id="origin"
-              cities={cities}
               value={origin}
               onChange={setOrigin}
               placeholder="Pilih kota asal"
@@ -92,7 +83,6 @@ export default function HeroSection() {
             </label>
             <ComboboxCitySearch
               id="destination"
-              cities={cities}
               value={destination}
               onChange={setDestination}
               placeholder="Pilih kota tujuan"

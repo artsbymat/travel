@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useForm, useStore } from "@tanstack/react-form";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Pencil, Plus, RefreshCw, Trash2, Users, Bus, Wallet } from "lucide-react";
 
 import {
@@ -47,6 +47,7 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { Vendor, VendorCreatePayload, VendorUpdatePayload } from "@/types/vendor-api";
@@ -94,8 +95,8 @@ const vendorKeys = {
 };
 
 const regionKeys = {
-  provinces: ["regions", "provinces"] as const,
-  cities: ["regions", "cities"] as const,
+  provinces: (query: string) => ["regions", "provinces", query] as const,
+  cities: (provinceId: string, query: string) => ["regions", "cities", provinceId, query] as const,
 };
 
 const defaultVendorValues: VendorFormValues = {
@@ -150,6 +151,22 @@ function slugify(value: string) {
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+function useDebouncedValue(value: string, delay = 300) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => setDebouncedValue(value), delay);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [delay, value]);
+
+  return debouncedValue;
+}
+
+function uniqueById<TItem extends { id: string }>(items: TItem[]) {
+  return Array.from(new Map(items.map((item) => [item.id, item])).values());
 }
 
 function toVendorFormValues(vendor?: VendorRecord | null, cities: City[] = []): VendorFormValues {
@@ -255,6 +272,8 @@ function RegionCombobox<TItem extends { id: string; name: string }>({
   emptyLabel,
   description,
   disabled = false,
+  isLoading = false,
+  onSearchChange,
 }: {
   id: string;
   items: TItem[];
@@ -264,14 +283,19 @@ function RegionCombobox<TItem extends { id: string; name: string }>({
   emptyLabel: string;
   description?: (item: TItem) => string;
   disabled?: boolean;
+  isLoading?: boolean;
+  onSearchChange?: (value: string) => void;
 }) {
   return (
     <Combobox
       items={items}
+      filter={null}
       value={value}
       onValueChange={onChange}
+      onInputValueChange={(inputValue) => onSearchChange?.(inputValue)}
       itemToStringValue={(item) => item?.id ?? ""}
       itemToStringLabel={(item) => item?.name ?? ""}
+      isItemEqualToValue={(item, selectedItem) => item.id === selectedItem.id}
       id={id}
     >
       <ComboboxInput
@@ -279,9 +303,15 @@ function RegionCombobox<TItem extends { id: string; name: string }>({
         className="w-full"
         disabled={disabled}
         showClear
-      />
+      >
+        {isLoading ? (
+          <div className="mr-7 flex items-center">
+            <Spinner className="text-muted-foreground" />
+          </div>
+        ) : null}
+      </ComboboxInput>
       <ComboboxContent className="w-full">
-        <ComboboxEmpty>{emptyLabel}</ComboboxEmpty>
+        <ComboboxEmpty>{isLoading ? "Memuat data..." : emptyLabel}</ComboboxEmpty>
         <ComboboxList>
           {(item) => (
             <ComboboxItem key={item.id} value={item}>
@@ -307,6 +337,12 @@ export function VendorsManager() {
   const [vendorToDelete, setVendorToDelete] = useState<VendorRecord | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
+  const [provinceSearch, setProvinceSearch] = useState("");
+  const [citySearch, setCitySearch] = useState("");
+  const debouncedProvinceSearch = useDebouncedValue(provinceSearch);
+  const debouncedCitySearch = useDebouncedValue(citySearch);
+  const provinceQuery = debouncedProvinceSearch.trim();
+  const cityQuery = debouncedCitySearch.trim();
 
   const vendorsQuery = useQuery({
     queryKey: vendorKeys.all,
@@ -314,18 +350,21 @@ export function VendorsManager() {
   });
 
   const provincesQuery = useQuery({
-    queryKey: regionKeys.provinces,
-    queryFn: () => readJson<Province[]>("/api/provinces"),
-  });
+    queryKey: regionKeys.provinces(provinceQuery),
+    queryFn: ({ signal }) => {
+      const params = new URLSearchParams({ limit: "34" });
 
-  const citiesQuery = useQuery({
-    queryKey: regionKeys.cities,
-    queryFn: () => readJson<City[]>("/api/cities"),
+      if (provinceQuery) {
+        params.set("q", provinceQuery);
+      }
+
+      return readJson<Province[]>(`/api/provinces?${params.toString()}`, { signal });
+    },
+    placeholderData: keepPreviousData,
   });
 
   const vendors = vendorsQuery.data ?? EMPTY_VENDORS;
   const provinces = provincesQuery.data ?? EMPTY_PROVINCES;
-  const cities = citiesQuery.data ?? EMPTY_CITIES;
   const form = useForm({
     defaultValues: defaultVendorValues,
     onSubmit: async ({ value }) => {
@@ -346,6 +385,8 @@ export function VendorsManager() {
 
       setEditingVendorId(null);
       form.reset(defaultVendorValues);
+      setProvinceSearch("");
+      setCitySearch("");
     },
   });
 
@@ -353,17 +394,36 @@ export function VendorsManager() {
   const selectedCityId = useStore(form.store, (state) => state.values.cityId);
   const slugValue = useStore(form.store, (state) => state.values.slug);
   const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
-  const filteredCities = useMemo(
+
+  const provinceCitiesQuery = useQuery({
+    queryKey: regionKeys.cities(selectedProvinceId, cityQuery),
+    queryFn: ({ signal }) => {
+      const params = new URLSearchParams({ provinceId: selectedProvinceId, limit: "20" });
+
+      if (cityQuery) {
+        params.set("q", cityQuery);
+      }
+
+      return readJson<City[]>(`/api/cities?${params.toString()}`, { signal });
+    },
+    enabled: Boolean(selectedProvinceId),
+    placeholderData: keepPreviousData,
+  });
+
+  const selectedVendor = vendors.find((vendor) => vendor.id === editingVendorId) ?? null;
+  const selectedVendorCity = selectedVendor?.city ?? null;
+  const cities = useMemo(
     () =>
-      selectedProvinceId
-        ? cities.filter((city) => city.provinceId === selectedProvinceId)
-        : cities,
-    [cities, selectedProvinceId]
+      uniqueById([
+        ...(provinceCitiesQuery.data ?? EMPTY_CITIES),
+        ...(selectedVendorCity ? [selectedVendorCity] : []),
+      ]),
+    [provinceCitiesQuery.data, selectedVendorCity]
   );
   const selectedProvince =
     provinces.find((province) => province.id === selectedProvinceId) ?? null;
   const selectedCity =
-    filteredCities.find((city) => city.id === selectedCityId) ?? null;
+    cities.find((city) => city.id === selectedCityId) ?? null;
 
   const createVendorMutation = useMutation({
     mutationFn: (payload: VendorCreatePayload) =>
@@ -420,15 +480,21 @@ export function VendorsManager() {
       return;
     }
 
-    const cityExists = filteredCities.some((city) => city.id === selectedCityId);
+    if (provinceCitiesQuery.isFetching) {
+      return;
+    }
+
+    const cityExists = cities.some((city) => city.id === selectedCityId);
     if (!cityExists && selectedCityId) {
       form.setFieldValue("cityId", "");
     }
-  }, [filteredCities, form, selectedCityId, selectedProvinceId]);
+  }, [cities, form, provinceCitiesQuery.isFetching, selectedCityId, selectedProvinceId]);
 
   function resetVendorForm() {
     setEditingVendorId(null);
     form.reset(defaultVendorValues);
+    setProvinceSearch("");
+    setCitySearch("");
     setSubmitError(null);
     setSubmitSuccess(null);
   }
@@ -456,9 +522,11 @@ export function VendorsManager() {
 
   function startEditVendor(vendor: VendorRecord) {
     setEditingVendorId(vendor.id);
-    const values = toVendorFormValues(vendor, cities);
+    const values = toVendorFormValues(vendor, vendor.city ? [vendor.city] : cities);
     form.reset(values);
     populateVendorForm(values);
+    setProvinceSearch("");
+    setCitySearch("");
     setSubmitError(null);
     setSubmitSuccess(null);
   }
@@ -475,11 +543,10 @@ export function VendorsManager() {
     setVendorToDelete(null);
   }
 
-  const loading = vendorsQuery.isLoading || provincesQuery.isLoading || citiesQuery.isLoading;
+  const loading = vendorsQuery.isLoading || provincesQuery.isLoading;
   const loadingError =
     vendorsQuery.error?.message ||
-    provincesQuery.error?.message ||
-    citiesQuery.error?.message;
+    provincesQuery.error?.message;
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
@@ -768,10 +835,13 @@ export function VendorsManager() {
                           onChange={(value) => {
                             field.handleChange(value?.id ?? "");
                             form.setFieldValue("cityId", "");
+                            setCitySearch("");
                           }}
+                          onSearchChange={setProvinceSearch}
                           placeholder="Cari provinsi"
                           emptyLabel="Provinsi tidak ditemukan."
                           description={(province) => province.code ?? "Tanpa kode"}
+                          isLoading={provincesQuery.isFetching}
                         />
                         <FieldDescription>
                           Ketik nama provinsi lalu navigasi dengan keyboard.
@@ -788,13 +858,19 @@ export function VendorsManager() {
                       <FieldContent>
                         <RegionCombobox
                           id="vendor-city"
-                          items={filteredCities}
+                          items={cities}
                           value={selectedCity}
                           onChange={(value) => field.handleChange(value?.id ?? "")}
+                          onSearchChange={setCitySearch}
                           placeholder="Cari kota"
-                          emptyLabel="Kota tidak ditemukan."
+                          emptyLabel={
+                            provinceCitiesQuery.isError
+                              ? "Gagal memuat kota."
+                              : "Kota tidak ditemukan."
+                          }
                           description={(city) => city.code ?? "Tanpa kode"}
                           disabled={!selectedProvinceId}
+                          isLoading={provinceCitiesQuery.isFetching}
                         />
                         <FieldDescription>
                           Pilih provinsi terlebih dulu agar daftar kota lebih relevan.

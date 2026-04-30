@@ -1,14 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  AlertCircle, 
-  Building2, 
-  Wallet, 
-  ArrowUpRight, 
-  ArrowDownLeft, 
+import {
+  TrendingUp,
+  TrendingDown,
+  AlertCircle,
+  Building2,
+  Wallet,
+  ArrowUpRight,
+  ArrowDownLeft,
   RefreshCw,
   Search,
   ArrowRight
@@ -50,18 +51,17 @@ export function FinancialReport() {
   const [searchTerm, setSearchTerm] = useState("");
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["admin", "reports", "finance"],
-    queryFn: fetchFinancialReport,
+    queryFn: fetchFinancialReport
   });
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const filteredVendors = useMemo(() => {
     if (!data?.vendors) return [];
-    return data.vendors.filter(v => 
-      v.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    return data.vendors.filter((v) => v.name.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [data?.vendors, searchTerm]);
 
   const vendorsWithDebt = useMemo(() => {
-    return filteredVendors.filter(v => v.debt > 0);
+    return filteredVendors.filter((v) => v.debt > 0);
   }, [filteredVendors]);
 
   if (isLoading) return <LoadingState />;
@@ -70,35 +70,35 @@ export function FinancialReport() {
   const { summary } = data!;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="animate-in fade-in space-y-8 duration-500">
       {/* ═══════════════════════════════════════
           SUMMARY STATS
           ═══════════════════════════════════════ */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard 
-          title="Pendapatan Platform" 
-          value={summary.platformRevenue} 
+        <StatCard
+          title="Pendapatan Platform"
+          value={summary.platformRevenue}
           icon={<TrendingUp className="size-5 text-emerald-500" />}
           description="Total keuntungan dari biaya platform"
           variant="emerald"
         />
-        <StatCard 
-          title="Piutang Platform" 
-          value={summary.totalVendorDebt} 
+        <StatCard
+          title="Piutang Platform"
+          value={summary.totalVendorDebt}
           icon={<AlertCircle className="size-5 text-rose-500" />}
           description="Uang vendor yang harus disetor ke kita"
           variant="rose"
         />
-        <StatCard 
-          title="Hutang Platform" 
-          value={summary.totalVendorBalance} 
+        <StatCard
+          title="Hutang Platform"
+          value={summary.totalVendorBalance}
           icon={<Wallet className="size-5 text-amber-500" />}
           description="Saldo vendor yang siap ditarik"
           variant="amber"
         />
-        <StatCard 
-          title="Pending Masuk" 
-          value={summary.totalPendingIn} 
+        <StatCard
+          title="Pending Masuk"
+          value={summary.totalPendingIn}
           icon={<RefreshCw className="size-5 text-blue-500" />}
           description="Transaksi yang menunggu settlement"
           variant="blue"
@@ -109,40 +109,42 @@ export function FinancialReport() {
         {/* ═══════════════════════════════════════
             VENDORS WITH DEBT (PIUTANG)
             ═══════════════════════════════════════ */}
-        <div className="lg:col-span-4 space-y-6">
+        <div className="space-y-6 lg:col-span-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold flex items-center gap-2">
+            <h3 className="flex items-center gap-2 text-lg font-bold">
               <TrendingDown className="size-5 text-rose-500" />
               Vendor Berhutang
             </h3>
-            <span className="bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full text-xs font-bold">
+            <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-bold text-rose-700">
               {vendorsWithDebt.length} Vendor
             </span>
           </div>
 
           <div className="space-y-3">
             {vendorsWithDebt.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-border p-8 text-center bg-muted/20">
-                <p className="text-sm text-muted-foreground italic">Semua vendor lunas.</p>
+              <div className="border-border bg-muted/20 rounded-3xl border border-dashed p-8 text-center">
+                <p className="text-muted-foreground text-sm italic">Semua vendor lunas.</p>
               </div>
             ) : (
-              vendorsWithDebt.map(vendor => (
-                <div 
-                  key={vendor.id} 
-                  className="group relative overflow-hidden rounded-[1.5rem] border border-border/70 bg-card p-4 transition-all hover:border-rose-200 hover:shadow-md"
+              vendorsWithDebt.map((vendor) => (
+                <div
+                  key={vendor.id}
+                  className="group border-border/70 bg-card relative overflow-hidden rounded-[1.5rem] border p-4 transition-all hover:border-rose-200 hover:shadow-md"
                 >
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="mb-2 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="size-8 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600">
+                      <div className="flex size-8 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
                         <Building2 className="size-4" />
                       </div>
-                      <span className="font-semibold text-sm line-clamp-1">{vendor.name}</span>
+                      <span className="line-clamp-1 text-sm font-semibold">{vendor.name}</span>
                     </div>
-                    <span className="text-sm font-bold text-rose-600">{formatCurrency(vendor.debt)}</span>
+                    <span className="text-sm font-bold text-rose-600">
+                      {formatCurrency(vendor.debt)}
+                    </span>
                   </div>
-                  <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
+                  <div className="text-muted-foreground flex items-center justify-between text-[10px] font-bold tracking-wider uppercase">
                     <span>Terakhir Update</span>
-                    <span>{new Date(vendor.lastUpdate).toLocaleDateString('id-ID')}</span>
+                    <span>{new Date(vendor.lastUpdate).toLocaleDateString("id-ID")}</span>
                   </div>
                 </div>
               ))
@@ -153,29 +155,29 @@ export function FinancialReport() {
         {/* ═══════════════════════════════════════
             FULL VENDOR LEDGER
             ═══════════════════════════════════════ */}
-        <div className="lg:col-span-8 space-y-6">
+        <div className="space-y-6 lg:col-span-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <h3 className="text-lg font-bold flex items-center gap-2">
-              <RefreshCw className={cn("size-5 text-primary", isFetching && "animate-spin")} />
+            <h3 className="flex items-center gap-2 text-lg font-bold">
+              <RefreshCw className={cn("text-primary size-5", isFetching && "animate-spin")} />
               Buku Besar Vendor
             </h3>
-            
+
             <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <Input 
-                placeholder="Cari vendor..." 
-                className="pl-9 rounded-2xl h-9 border-border/70"
+              <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+              <Input
+                placeholder="Cari vendor..."
+                className="border-border/70 h-9 rounded-2xl pl-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-border/70 bg-card overflow-hidden shadow-sm">
+          <div className="border-border/70 bg-card overflow-hidden rounded-[2rem] border shadow-sm">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full border-collapse text-left">
                 <thead>
-                  <tr className="bg-muted/30 text-[11px] uppercase tracking-widest font-bold text-muted-foreground">
+                  <tr className="bg-muted/30 text-muted-foreground text-[11px] font-bold tracking-widest uppercase">
                     <th className="px-6 py-4">Vendor</th>
                     <th className="px-6 py-4 text-right">Saldo Wallet</th>
                     <th className="px-6 py-4 text-right">Hutang ke Kita</th>
@@ -183,27 +185,31 @@ export function FinancialReport() {
                     <th className="px-6 py-4">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/50">
-                  {filteredVendors.map(vendor => (
+                <tbody className="divide-border/50 divide-y">
+                  {filteredVendors.map((vendor) => (
                     <tr key={vendor.id} className="hover:bg-muted/20 transition-colors">
                       <td className="px-6 py-4">
-                        <div className="font-semibold text-sm">{vendor.name}</div>
-                        <div className="text-[10px] text-muted-foreground">{vendor.slug}</div>
+                        <div className="text-sm font-semibold">{vendor.name}</div>
+                        <div className="text-muted-foreground text-[10px]">{vendor.slug}</div>
                       </td>
-                      <td className="px-6 py-4 text-right font-medium text-sm">
+                      <td className="px-6 py-4 text-right text-sm font-medium">
                         {formatCurrency(vendor.balance)}
                       </td>
-                      <td className="px-6 py-4 text-right font-bold text-sm text-rose-600">
+                      <td className="px-6 py-4 text-right text-sm font-bold text-rose-600">
                         {vendor.debt > 0 ? formatCurrency(vendor.debt) : "-"}
                       </td>
-                      <td className="px-6 py-4 text-right text-sm text-muted-foreground italic">
+                      <td className="text-muted-foreground px-6 py-4 text-right text-sm italic">
                         {vendor.pendingIn > 0 ? formatCurrency(vendor.pendingIn) : "-"}
                       </td>
                       <td className="px-6 py-4">
-                        <span className={cn(
-                          "px-2 py-0.5 rounded-full text-[10px] font-bold",
-                          vendor.isActive ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"
-                        )}>
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-0.5 text-[10px] font-bold",
+                            vendor.isActive
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-muted text-muted-foreground"
+                          )}
+                        >
                           {vendor.isActive ? "AKTIF" : "NONAKTIF"}
                         </span>
                       </td>
@@ -211,7 +217,10 @@ export function FinancialReport() {
                   ))}
                   {filteredVendors.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-6 py-10 text-center text-muted-foreground italic">
+                      <td
+                        colSpan={5}
+                        className="text-muted-foreground px-6 py-10 text-center italic"
+                      >
                         Tidak ada data ditemukan.
                       </td>
                     </tr>
@@ -231,26 +240,31 @@ function StatCard({ title, value, icon, description, variant }: any) {
     emerald: "bg-emerald-50 text-emerald-700 border-emerald-100",
     rose: "bg-rose-50 text-rose-700 border-rose-100",
     amber: "bg-amber-50 text-amber-700 border-amber-100",
-    blue: "bg-blue-50 text-blue-700 border-blue-100",
+    blue: "bg-blue-50 text-blue-700 border-blue-100"
   };
 
   return (
-    <div className="relative group overflow-hidden rounded-[2rem] border border-border/70 bg-card p-6 shadow-sm transition-all hover:shadow-md">
-      <div className="flex items-center justify-between mb-4">
-        <div className={cn("size-10 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", variants[variant])}>
+    <div className="group border-border/70 bg-card relative overflow-hidden rounded-[2rem] border p-6 shadow-sm transition-all hover:shadow-md">
+      <div className="mb-4 flex items-center justify-between">
+        <div
+          className={cn(
+            "flex size-10 items-center justify-center rounded-2xl transition-transform group-hover:scale-110",
+            variants[variant]
+          )}
+        >
           {icon}
         </div>
-        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+        <div className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">
           Finance
         </div>
       </div>
       <div className="space-y-1">
-        <p className="text-sm font-medium text-muted-foreground">{title}</p>
+        <p className="text-muted-foreground text-sm font-medium">{title}</p>
         <h4 className="text-2xl font-bold tracking-tight">{formatCurrency(value)}</h4>
       </div>
-      <p className="mt-4 text-[10px] text-muted-foreground font-medium flex items-center gap-1">
+      <p className="text-muted-foreground mt-4 flex items-center gap-1 text-[10px] font-medium">
         {description}
-        <ArrowRight className="size-2 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
+        <ArrowRight className="size-2 -translate-x-2 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
       </p>
     </div>
   );
@@ -258,15 +272,15 @@ function StatCard({ title, value, icon, description, variant }: any) {
 
 function LoadingState() {
   return (
-    <div className="space-y-8 animate-pulse">
+    <div className="animate-pulse space-y-8">
       <div className="grid gap-6 md:grid-cols-4">
         {[...Array(4)].map((_, i) => (
           <Skeleton key={i} className="h-32 rounded-[2rem]" />
         ))}
       </div>
       <div className="grid gap-8 lg:grid-cols-12">
-        <Skeleton className="lg:col-span-4 h-[400px] rounded-[2rem]" />
-        <Skeleton className="lg:col-span-8 h-[400px] rounded-[2rem]" />
+        <Skeleton className="h-[400px] rounded-[2rem] lg:col-span-4" />
+        <Skeleton className="h-[400px] rounded-[2rem] lg:col-span-8" />
       </div>
     </div>
   );
@@ -274,11 +288,17 @@ function LoadingState() {
 
 function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className="rounded-[2.5rem] border border-destructive/20 bg-destructive/5 p-12 text-center">
-      <AlertCircle className="mx-auto size-12 text-destructive mb-4" />
-      <h3 className="text-lg font-bold text-destructive mb-2">Terjadi Kesalahan</h3>
-      <p className="text-sm text-muted-foreground mb-6">Gagal memuat data finansial. Silakan coba lagi.</p>
-      <Button variant="outline" onClick={onRetry} className="rounded-2xl border-destructive/20 hover:bg-destructive/10">
+    <div className="border-destructive/20 bg-destructive/5 rounded-[2.5rem] border p-12 text-center">
+      <AlertCircle className="text-destructive mx-auto mb-4 size-12" />
+      <h3 className="text-destructive mb-2 text-lg font-bold">Terjadi Kesalahan</h3>
+      <p className="text-muted-foreground mb-6 text-sm">
+        Gagal memuat data finansial. Silakan coba lagi.
+      </p>
+      <Button
+        variant="outline"
+        onClick={onRetry}
+        className="border-destructive/20 hover:bg-destructive/10 rounded-2xl"
+      >
         Coba Lagi
       </Button>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useStore } from "@tanstack/react-form";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Pencil, Plus, RefreshCw, Trash2, Users, Bus, Wallet } from "lucide-react";
@@ -333,6 +333,7 @@ function RegionCombobox<TItem extends { id: string; name: string }>({
 
 export function VendorsManager() {
   const queryClient = useQueryClient();
+  const slugEditedManuallyRef = useRef(false);
   const [editingVendorId, setEditingVendorId] = useState<string | null>(null);
   const [vendorToDelete, setVendorToDelete] = useState<VendorRecord | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -384,6 +385,7 @@ export function VendorsManager() {
       }
 
       setEditingVendorId(null);
+      slugEditedManuallyRef.current = false;
       form.reset(defaultVendorValues);
       setProvinceSearch("");
       setCitySearch("");
@@ -392,7 +394,6 @@ export function VendorsManager() {
 
   const selectedProvinceId = useStore(form.store, (state) => state.values.provinceId);
   const selectedCityId = useStore(form.store, (state) => state.values.cityId);
-  const slugValue = useStore(form.store, (state) => state.values.slug);
   const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
 
   const provinceCitiesQuery = useQuery({
@@ -492,6 +493,7 @@ export function VendorsManager() {
 
   function resetVendorForm() {
     setEditingVendorId(null);
+    slugEditedManuallyRef.current = false;
     form.reset(defaultVendorValues);
     setProvinceSearch("");
     setCitySearch("");
@@ -522,6 +524,7 @@ export function VendorsManager() {
 
   function startEditVendor(vendor: VendorRecord) {
     setEditingVendorId(vendor.id);
+    slugEditedManuallyRef.current = true;
     const values = toVendorFormValues(vendor, vendor.city ? [vendor.city] : cities);
     form.reset(values);
     populateVendorForm(values);
@@ -736,7 +739,7 @@ export function VendorsManager() {
                           onBlur={field.handleBlur}
                           onChange={(event) => {
                             field.handleChange(event.target.value);
-                            if (!editingVendorId && !slugValue) {
+                            if (!editingVendorId && !slugEditedManuallyRef.current) {
                               form.setFieldValue("slug", slugify(event.target.value));
                             }
                           }}
@@ -764,7 +767,10 @@ export function VendorsManager() {
                           name={field.name}
                           value={field.state.value}
                           onBlur={field.handleBlur}
-                          onChange={(event) => field.handleChange(slugify(event.target.value))}
+                          onChange={(event) => {
+                            slugEditedManuallyRef.current = true;
+                            field.handleChange(slugify(event.target.value));
+                          }}
                           placeholder="sinar-jaya"
                         />
                         <FieldDescription>Gunakan format URL-friendly dan unik.</FieldDescription>

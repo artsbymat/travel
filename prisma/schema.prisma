@@ -29,24 +29,54 @@ model City {
   @@index([provinceId])
 }
 
+model Role {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User[]
+}
+
 model User {
   id                       String                 @id @default(cuid())
   name                     String
   email                    String?                @unique
   phone                    String?                @unique
   password                 String?
-  role                     Role
+  roleId                   String
   vendorId                 String?
   createdAt                DateTime               @default(now())
   updatedAt                DateTime               @updatedAt
+  role                     Role                   @relation(fields: [roleId], references: [id])
   processedRefunds         Refund[]               @relation("RefundProcessor")
   vendor                   Vendor?                @relation(fields: [vendorId], references: [id])
   processedBillingPayments VendorBillingPayment[] @relation("BillingProcessor")
   driverTrips              Trip[]                 @relation("DriverTrips")
-  driverProfile            DriverProfile?
+  templateSchedules        TripTemplateSchedule[] @relation("DriverTemplateSchedules")
+  profile                  UserProfile?
 
   @@index([vendorId])
-  @@index([role])
+  @@index([roleId])
+}
+
+model UserProfile {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  fullName  String?
+  birthDate DateTime?
+  gender    Gender?
+  photoUrl  String?
+  address   String?
+  // Driver-specific fields
+  simNumber String?   @unique
+  ktpNumber String?   @unique
+  ktpImage  String?
+  simImage  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Vendor {
@@ -80,6 +110,7 @@ model Vendor {
   refundPolicies  VendorRefundPolicy[]
   settlements     VendorSettlement[]
   wallet          VendorWallet?
+  tripTemplates   TripTemplate[]
 
   @@index([cityId])
   @@index([isActive])
@@ -138,29 +169,30 @@ model VendorEWallet {
 }
 
 model Vehicle {
-  id           String        @id @default(cuid())
-  licensePlate String        @unique
-  name         String?
-  brand        String
-  model        String
-  year         Int?
-  capacity     Int
-  color        String?
-  status       VehicleStatus @default(ACTIVE)
-  imageUrl     String?
-  seatLayout   Json?
-  vendorId     String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  trips        Trip[]
-  vendor       Vendor        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  id                String                 @id @default(cuid())
+  licensePlate      String                 @unique
+  name              String?
+  brand             String
+  model             String
+  year              Int?
+  capacity          Int
+  color             String?
+  status            VehicleStatus          @default(ACTIVE)
+  imageUrl          String?
+  seatLayout        Json?
+  vendorId          String
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  trips             Trip[]
+  vendor            Vendor                 @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  templateSchedules TripTemplateSchedule[]
 
   @@index([vendorId])
   @@index([status])
 }
 
 model Trip {
-  id                String     @id @default(cuid())
+  id                String        @id @default(cuid())
   origin            String
   destination       String
   originDetail      String?
@@ -169,23 +201,27 @@ model Trip {
   arrivalTime       DateTime?
   originLat         Float?
   originLng         Float?
-  price             Decimal    @db.Decimal(12, 2)
-  amenities         Amenity[]  @default([])
-  minBooking        Int        @default(1)
+  price             Decimal       @db.Decimal(12, 2)
+  amenities         Amenity[]     @default([])
+  minBooking        Int           @default(1)
   bookingDeadline   DateTime?
-  status            TripStatus @default(SCHEDULED)
+  status            TripStatus    @default(SCHEDULED)
   notes             String?
   vehicleId         String
   driverId          String?
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
+  templateId        String?
+  scheduleId        String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
   bookings          Booking[]
-  vehicle           Vehicle    @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  driver            User?      @relation("DriverTrips", fields: [driverId], references: [id])
+  vehicle           Vehicle       @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver            User?         @relation("DriverTrips", fields: [driverId], references: [id])
+  template          TripTemplate? @relation("TripFromTemplate", fields: [templateId], references: [id])
   seats             TripSeat[]
 
   @@index([vehicleId])
   @@index([driverId])
+  @@index([templateId])
   @@index([origin, destination])
   @@index([departureTime])
   @@index([status])
@@ -211,43 +247,43 @@ model TripSeat {
 }
 
 model Booking {
-  id                String         @id @default(cuid())
-  bookingCode       String         @unique
-  customerName      String
-  customerPhone     String
-  customerEmail     String?
-  pickupLat         Float?
-  pickupLng         Float?
-  tripId            String
-  seatCount         Int
-  subtotal          Decimal        @db.Decimal(12, 2)
-  taxAmount         Decimal?       @db.Decimal(12, 2)
-  totalAmount       Decimal        @db.Decimal(12, 2)
-  platformFeeRate   Decimal?       @db.Decimal(5, 2)
-  platformFeeAmount Decimal?       @db.Decimal(12, 2)
-  vendorAmount      Decimal?       @db.Decimal(12, 2)
-  paymentMethod     PaymentMethod
-  paymentStatus     PaymentStatus  @default(UNPAID)
-  paidAt            DateTime?
-  pgTransactionId   String?
-  pgProvider        String?
-  ewalletType       EWalletType?
-  ewalletName       String?
-  ewalletNo         String?
-  status            BookingStatus  @default(PENDING)
-  notes             String?
-  expiresAt         DateTime?
-  transferredFromId String?        @unique
-  billingId         String?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  billing           VendorBilling? @relation(fields: [billingId], references: [id])
-  transferredFrom   Booking?       @relation("BookingTransfer", fields: [transferredFromId], references: [id])
-  transferredTo     Booking?       @relation("BookingTransfer")
-  trip              Trip           @relation(fields: [tripId], references: [id])
-  refunds              Refund[]
-  seats                TripSeat[]
-  paymentTransactions  PaymentTransaction[]
+  id                  String               @id @default(cuid())
+  bookingCode         String               @unique
+  customerName        String
+  customerPhone       String
+  customerEmail       String?
+  pickupLat           Float?
+  pickupLng           Float?
+  tripId              String
+  seatCount           Int
+  subtotal            Decimal              @db.Decimal(12, 2)
+  taxAmount           Decimal?             @db.Decimal(12, 2)
+  totalAmount         Decimal              @db.Decimal(12, 2)
+  platformFeeRate     Decimal?             @db.Decimal(5, 2)
+  platformFeeAmount   Decimal?             @db.Decimal(12, 2)
+  vendorAmount        Decimal?             @db.Decimal(12, 2)
+  paymentMethod       PaymentMethod
+  paymentStatus       PaymentStatus        @default(UNPAID)
+  paidAt              DateTime?
+  pgTransactionId     String?
+  pgProvider          String?
+  ewalletType         EWalletType?
+  ewalletName         String?
+  ewalletNo           String?
+  status              BookingStatus        @default(PENDING)
+  notes               String?
+  expiresAt           DateTime?
+  transferredFromId   String?              @unique
+  billingId           String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  billing             VendorBilling?       @relation(fields: [billingId], references: [id])
+  transferredFrom     Booking?             @relation("BookingTransfer", fields: [transferredFromId], references: [id])
+  transferredTo       Booking?             @relation("BookingTransfer")
+  trip                Trip                 @relation(fields: [tripId], references: [id])
+  refunds             Refund[]
+  seats               TripSeat[]
+  paymentTransactions PaymentTransaction[]
 
   @@index([tripId])
   @@index([customerPhone])
@@ -361,21 +397,77 @@ model Refund {
 }
 
 // ═══════════════════════════════════════════════
+// TRIP TEMPLATE (RECURRING SCHEDULE)
+// ═══════════════════════════════════════════════
+
+model TripTemplate {
+  id                   String                 @id @default(cuid())
+  vendorId             String
+  name                 String
+  origin               String
+  destination          String
+  originDetail         String?
+  destinationDetail    String?
+  originLat            Float?
+  originLng            Float?
+  price                Decimal                @db.Decimal(12, 2)
+  amenities            Amenity[]              @default([])
+  minBooking           Int                    @default(1)
+  bookingDeadlineHours Int?
+  notes                String?
+  isActive             Boolean                @default(true)
+  validFrom            DateTime?
+  validUntil           DateTime?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  vendor               Vendor                 @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  schedules            TripTemplateSchedule[]
+  generatedTrips       Trip[]                 @relation("TripFromTemplate")
+
+  @@index([vendorId])
+  @@index([isActive])
+  @@index([origin, destination])
+}
+
+model TripTemplateSchedule {
+  id            String       @id @default(cuid())
+  templateId    String
+  vehicleId     String
+  driverId      String?
+  dayOfWeek     DayOfWeek
+  departureTime String
+  priceOverride Decimal?     @db.Decimal(12, 2)
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  template      TripTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  vehicle       Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver        User?        @relation("DriverTemplateSchedules", fields: [driverId], references: [id])
+
+  @@unique([templateId, vehicleId, dayOfWeek, departureTime])
+  @@index([templateId])
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([dayOfWeek])
+  @@index([isActive])
+}
+
+// ═══════════════════════════════════════════════
 // FINANCIAL SYSTEM
 // ═══════════════════════════════════════════════
 
 // Saldo real-time vendor
 model VendorWallet {
-  id          String              @id @default(cuid())
-  vendorId    String              @unique
-  balance     Decimal             @default(0) @db.Decimal(14, 2)
-  pendingIn   Decimal             @default(0) @db.Decimal(14, 2)
-  debt        Decimal             @default(0) @db.Decimal(14, 2)
-  totalEarned Decimal             @default(0) @db.Decimal(14, 2)
-  lockedAt    DateTime?
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  vendor      Vendor              @relation(fields: [vendorId], references: [id])
+  id           String              @id @default(cuid())
+  vendorId     String              @unique
+  balance      Decimal             @default(0) @db.Decimal(14, 2)
+  pendingIn    Decimal             @default(0) @db.Decimal(14, 2)
+  debt         Decimal             @default(0) @db.Decimal(14, 2)
+  totalEarned  Decimal             @default(0) @db.Decimal(14, 2)
+  lockedAt     DateTime?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  vendor       Vendor              @relation(fields: [vendorId], references: [id])
   transactions WalletTransaction[]
   withdrawals  WithdrawRequest[]
 }
@@ -421,23 +513,23 @@ model LedgerEntry {
 
 // Tracking interaksi dengan Payment Gateway (Midtrans)
 model PaymentTransaction {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   bookingId       String
-  provider        String   @default("midtrans")
-  externalId      String   @unique
+  provider        String    @default("midtrans")
+  externalId      String    @unique
   transactionId   String?
   paymentType     String?
-  grossAmount     Decimal  @db.Decimal(14, 2)
-  pgFeeAmount     Decimal? @db.Decimal(14, 2)
-  netAmount       Decimal? @db.Decimal(14, 2)
-  status          PgStatus @default(PENDING)
+  grossAmount     Decimal   @db.Decimal(14, 2)
+  pgFeeAmount     Decimal?  @db.Decimal(14, 2)
+  netAmount       Decimal?  @db.Decimal(14, 2)
+  status          PgStatus  @default(PENDING)
   rawPayload      Json?
   callbackPayload Json?
   expiresAt       DateTime?
   paidAt          DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  booking         Booking  @relation(fields: [bookingId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  booking         Booking   @relation(fields: [bookingId], references: [id])
 
   @@index([bookingId])
   @@index([externalId])
@@ -473,34 +565,22 @@ model WithdrawRequest {
 }
 
 // ═══════════════════════════════════════════════
-// DRIVER PROFILE
-// ═══════════════════════════════════════════════
-
-model DriverProfile {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  simNumber String   @unique
-  ktpNumber String   @unique
-  address   String
-  photoUrl  String?
-  ktpImage  String?
-  simImage  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
-
-// ═══════════════════════════════════════════════
 // ENUMS
 // ═══════════════════════════════════════════════
 
-enum Role {
-  SUPER_ADMIN
-  OWNER
-  STAFF
-  DRIVER
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
 }
 
 enum TripStatus {

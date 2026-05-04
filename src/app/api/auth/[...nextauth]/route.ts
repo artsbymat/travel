@@ -25,6 +25,7 @@ export const authOptions = {
                 }
                 const user = await prisma.user.findUnique({
                     where: { email: credentials.email },
+                    include: { role: true },
                 });
 
                 if (!user || !user.password || !credentials.password) throw new Error("User not found");
@@ -44,7 +45,7 @@ export const authOptions = {
         }) {
             if (user) {
                 token.id = user.id;
-                token.role = user.role;
+                token.role = user.role?.name;
                 token.vendorId = user.vendorId;
             }
             return token;

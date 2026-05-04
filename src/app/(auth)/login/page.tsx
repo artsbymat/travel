@@ -5,16 +5,22 @@ import { useState } from "react";
 import { signIn, getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Car } from "lucide-react";
 
 // Redirect per role — tambah/edit sesuai kebutuhan
 function getDashboardUrl(role?: string): string {
   switch (role) {
-    case "SUPER_ADMIN": return "/admin";
-    case "OWNER":       return "/dashboard";
-    case "STAFF":       return "/staff";
-    case "DRIVER":      return "/driver";
-    default:            return "/login";
+    case "SUPER_ADMIN":
+      return "/admin";
+    case "OWNER":
+      return "/dashboard";
+    case "STAFF":
+      return "/staff";
+    case "DRIVER":
+      return "/driver";
+    default:
+      return "/login";
   }
 }
 
@@ -38,7 +44,7 @@ export default function LoginPage() {
       redirect: false,
       email,
       password,
-      callbackUrl,
+      callbackUrl
     });
 
     setLoading(false);
@@ -48,8 +54,8 @@ export default function LoginPage() {
         res.error === "User not found"
           ? "Email tidak ditemukan. Periksa kembali email Anda."
           : res.error === "Wrong password"
-          ? "Password salah. Silakan coba lagi."
-          : "Gagal login. Periksa email dan password Anda."
+            ? "Password salah. Silakan coba lagi."
+            : "Gagal login. Periksa email dan password Anda."
       );
     } else if (res?.ok) {
       // Ambil session untuk tau role, lalu arahkan ke dashboard yang sesuai
@@ -92,19 +98,17 @@ export default function LoginPage() {
           {/* Social proof */}
           <div className="login-social-proof">
             <div className="login-avatars">
-              {["/Container.png", "/Container.png", "/Container.png"].map(
-                (src, i) => (
-                  <Image
-                    key={i}
-                    src={src}
-                    alt="Partner avatar"
-                    width={36}
-                    height={36}
-                    className="login-avatar-img"
-                    style={{ zIndex: 3 - i }}
-                  />
-                )
-              )}
+              {["/Container.png", "/Container.png", "/Container.png"].map((src, i) => (
+                <Image
+                  key={i}
+                  src={src}
+                  alt="Partner avatar"
+                  width={36}
+                  height={36}
+                  className="login-avatar-img"
+                  style={{ zIndex: 3 - i }}
+                />
+              ))}
             </div>
             <div className="login-social-text">
               <span className="login-social-count">2,000+</span>
@@ -126,9 +130,7 @@ export default function LoginPage() {
           {/* Form header */}
           <div className="login-form-header">
             <h1 className="login-form-title">Welcome Back!</h1>
-            <p className="login-form-subtitle">
-              Ready for your next adventure?
-            </p>
+            <p className="login-form-subtitle">Ready for your next adventure?</p>
           </div>
 
           {/* Error alert */}
@@ -170,7 +172,11 @@ export default function LoginPage() {
                 <label className="login-label" htmlFor="login-password">
                   Password
                 </label>
-                <button type="button" className="login-forgot">
+                <button
+                  type="button"
+                  className="login-forgot"
+                  onClick={() => router.push("/forget-password")}
+                >
                   Forgot password?
                 </button>
               </div>
@@ -200,12 +206,7 @@ export default function LoginPage() {
             </div>
 
             {/* Submit button */}
-            <button
-              id="login-submit-btn"
-              type="submit"
-              className="login-btn"
-              disabled={loading}
-            >
+            <button id="login-submit-btn" type="submit" className="login-btn" disabled={loading}>
               {loading ? (
                 <>
                   <span className="login-spinner" aria-hidden="true" />

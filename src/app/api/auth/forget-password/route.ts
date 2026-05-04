@@ -1,9 +1,18 @@
 import { randomBytes } from "crypto";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
+import { render } from "@react-email/render";
 import { prisma } from "@/lib/prisma";
 import { ResetPasswordEmail } from "@/components/template/emailTemplate";
 
-const resend = new Resend(process.env.RESEND_API_KEY!);
+const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: {
+        user: process.env.NODEMAILER_USER!,
+        pass: process.env.NODEMAILER_PASSWORD!,
+    },
+});
 
 export async function POST(request: Request) {
     try {
@@ -32,27 +41,30 @@ export async function POST(request: Request) {
 
             const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 
-            const { data, error: resendError } = await resend.emails.send({
-                from: process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev",
-                to: email,
-                subject: "Reset Password Akun Kamu",
-                react: ResetPasswordEmail({
+            const html = await render(
+                ResetPasswordEmail({
                     userName: user.name ?? undefined,
                     resetToken: token,
                     baseUrl,
                     expiresInHours: 1,
                 }),
-            });
+            );
 
-            if (resendError) {
-                console.error("[forget-password] Resend error:", resendError);
+            try {
+                await transporter.sendMail({
+                    from: process.env.NODEMAILER_USER!,
+                    to: email,
+                    subject: "Reset Password Akun Kamu",
+                    html,
+                });
+                console.log("[forget-password] Email sent to:", email);
+            } catch (mailError) {
+                console.error("[forget-password] Nodemailer error:", mailError);
                 return Response.json(
                     { error: "Gagal mengirim email. Coba lagi nanti." },
                     { status: 500 },
                 );
             }
-
-            console.log("[forget-password] Email sent, id:", data?.id);
         }
 
         return Response.json(

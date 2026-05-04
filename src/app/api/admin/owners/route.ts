@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { Role } from "@prisma/client";
 import { hash } from "bcrypt";
 import { OwnerCreatePayload } from "@/types/owner-api";
 
@@ -9,7 +8,7 @@ export async function GET() {
   try {
     const owners = await prisma.user.findMany({
       where: {
-        role: Role.OWNER,
+        role: { name: "OWNER" },
       },
       select: {
         id: true,
@@ -87,14 +86,26 @@ export async function POST(req: NextRequest) {
     const hashedPassword = await hash(password, 10);
 
     // Create user
+
     const user = await prisma.user.create({
       data: {
         name,
         email,
         phone,
         password: hashedPassword,
-        role: Role.OWNER,
-        vendorId,
+        role: {
+          connect: { name: "OWNER" },
+        },
+        vendor: {
+          connect: { id: vendorId },
+        },
+        profile: {
+          create: {
+            photoUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+              name
+            )}&background=random&size=128`,
+          },
+        },
       },
       include: {
         vendor: {
@@ -103,8 +114,8 @@ export async function POST(req: NextRequest) {
             name: true,
           },
         },
-      },
-    });
+      }
+    })
 
     // Don't return password
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

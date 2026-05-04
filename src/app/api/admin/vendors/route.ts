@@ -7,7 +7,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 // GET: List all vendors (Super Admin only)
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || (session.user as any).role !== "SUPER_ADMIN") {
@@ -17,7 +17,19 @@ export async function GET() {
       );
     }
 
+    const { searchParams } = new URL(req.url);
+    const noOwner = searchParams.get("noOwner") === "true";
+
     const vendors = await prisma.vendor.findMany({
+      where: noOwner
+        ? {
+          users: {
+            none: {
+              role: { name: "OWNER" },
+            },
+          },
+        }
+        : undefined,
       include: {
         city: true,
         wallet: {

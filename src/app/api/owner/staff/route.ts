@@ -14,7 +14,7 @@ export async function GET() {
         { status: 403 }
       );
     }
-    
+
     const vendorId = session.user.vendorId;
     if (!vendorId) {
       return NextResponse.json({ error: "Owner has no vendor assigned" }, { status: 400 });
@@ -23,7 +23,7 @@ export async function GET() {
     const staffList = await prisma.user.findMany({
       where: {
         vendorId,
-        role: "STAFF",
+        role: { name: "STAFF" },
       },
       select: {
         id: true,
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
         email: email || null,
         phone: phone || null,
         password: hashedPassword,
-        role: "STAFF",
+        role: { connect: { name: "STAFF" } },
         vendorId,
       },
       select: {

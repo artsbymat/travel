@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { Role } from "@prisma/client";
 import { hash } from "bcrypt";
 import { DriverUpdatePayload } from "@/types/driver-api";
 
@@ -13,7 +12,7 @@ export async function GET(
   try {
     const { id } = await params;
     const driver = await prisma.user.findFirst({
-      where: { id, role: Role.DRIVER },
+      where: { id, role: { name: "DRIVER" } },
       include: {
         vendor: true,
       },

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { Role } from "@prisma/client";
 import { hash } from "bcrypt";
 import { OwnerUpdatePayload } from "@/types/owner-api";
 
@@ -16,7 +15,7 @@ export async function GET(req: NextRequest, { params }: Props) {
     const owner = await prisma.user.findFirst({
       where: {
         id,
-        role: Role.OWNER,
+        role: { name: "OWNER" },
       },
       select: {
         id: true,
@@ -56,7 +55,7 @@ export async function PATCH(req: NextRequest, { params }: Props) {
     const owner = await prisma.user.findFirst({
       where: {
         id,
-        role: Role.OWNER,
+        role: { name: "OWNER" },
       },
     });
 
@@ -118,7 +117,7 @@ export async function DELETE(req: NextRequest, { params }: Props) {
     const owner = await prisma.user.findFirst({
       where: {
         id,
-        role: Role.OWNER,
+        role: { name: "OWNER" },
       },
     });
 

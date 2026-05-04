@@ -14,7 +14,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogMedia,
-  AlertDialogTitle,
+  AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +23,7 @@ import {
   ComboboxEmpty,
   ComboboxInput,
   ComboboxItem,
-  ComboboxList,
+  ComboboxList
 } from "@/components/ui/combobox";
 import {
   Field,
@@ -32,7 +32,7 @@ import {
   FieldError,
   FieldGroup,
   FieldLabel,
-  FieldSet,
+  FieldSet
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -43,7 +43,7 @@ import {
   ItemGroup,
   ItemHeader,
   ItemMedia,
-  ItemTitle,
+  ItemTitle
 } from "@/components/ui/item";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -62,6 +62,7 @@ type OwnerRecord = {
   email?: string | null;
   phone?: string | null;
   role: "OWNER";
+  isActive: boolean;
   vendorId?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -77,11 +78,11 @@ type OwnerFormValues = {
 };
 
 const ownerKeys = {
-  all: ["admin", "owners"] as const,
+  all: ["admin", "owners"] as const
 };
 
 const vendorOptionKeys = {
-  all: ["admin", "vendors", "options"] as const,
+  all: ["admin", "vendors", "options"] as const
 };
 
 const defaultOwnerValues: OwnerFormValues = {
@@ -89,7 +90,7 @@ const defaultOwnerValues: OwnerFormValues = {
   email: "",
   phone: "",
   password: "",
-  vendorId: "",
+  vendorId: ""
 };
 
 const EMPTY_OWNERS: OwnerRecord[] = [];
@@ -126,57 +127,31 @@ function toOwnerFormValues(owner?: OwnerRecord | null): OwnerFormValues {
     email: owner.email ?? "",
     phone: owner.phone ?? "",
     password: "",
-    vendorId: owner.vendorId ?? "",
+    vendorId: owner.vendorId ?? ""
   };
 }
 
-function toOwnerPayload(
-  values: OwnerFormValues,
-  isEditing: boolean
-): OwnerCreatePayload | OwnerUpdatePayload {
+function toOwnerPayload(values: OwnerFormValues): OwnerCreatePayload | OwnerUpdatePayload {
   return {
     name: values.name.trim(),
     email: values.email.trim(),
     phone: values.phone.trim() || undefined,
-    vendorId: values.vendorId,
-    password: isEditing ? values.password.trim() || undefined : values.password,
+    vendorId: values.vendorId
   };
 }
 
-function validateOwnerPassword(value: string, isEditing: boolean) {
+function validateEditedOwnerPassword(value: string) {
   const trimmedValue = value.trim();
-
-  if (!isEditing) {
-    if (!trimmedValue) {
-      return "Password wajib diisi.";
-    }
-
-    if (trimmedValue.length < 6) {
-      return "Password minimal 6 karakter.";
-    }
-
-    return undefined;
-  }
-
   if (trimmedValue && trimmedValue.length < 6) {
     return "Password baru minimal 6 karakter.";
   }
-
   return undefined;
-}
-
-function validateNewOwnerPassword(value: string) {
-  return validateOwnerPassword(value, false);
-}
-
-function validateEditedOwnerPassword(value: string) {
-  return validateOwnerPassword(value, true);
 }
 
 function VendorCombobox({
   vendors,
   value,
-  onChange,
+  onChange
 }: {
   vendors: VendorOption[];
   value: VendorOption | null;
@@ -191,11 +166,7 @@ function VendorCombobox({
       itemToStringLabel={(vendor) => vendor?.name ?? ""}
       id="owner-vendor"
     >
-      <ComboboxInput
-        placeholder="Cari vendor"
-        className="w-full"
-        showClear
-      />
+      <ComboboxInput placeholder="Cari vendor" className="w-full" showClear />
       <ComboboxContent className="w-full">
         <ComboboxEmpty>Vendor tidak ditemukan.</ComboboxEmpty>
         <ComboboxList>
@@ -224,15 +195,16 @@ export function OwnersManager() {
 
   const ownersQuery = useQuery({
     queryKey: ownerKeys.all,
-    queryFn: () => readJson<OwnerRecord[]>("/api/admin/owners"),
+    queryFn: () => readJson<OwnerRecord[]>("/api/admin/owners")
   });
 
   const vendorsQuery = useQuery({
-    queryKey: vendorOptionKeys.all,
+    queryKey: [...vendorOptionKeys.all, { noOwner: !editingOwnerId }],
     queryFn: async () => {
-      const vendors = await readJson<VendorOption[]>("/api/admin/vendors");
+      const url = editingOwnerId ? "/api/admin/vendors" : "/api/admin/vendors?noOwner=true";
+      const vendors = await readJson<VendorOption[]>(url);
       return vendors;
-    },
+    }
   });
 
   const owners = ownersQuery.data ?? EMPTY_OWNERS;
@@ -243,11 +215,11 @@ export function OwnersManager() {
       setSubmitError(null);
       setSubmitSuccess(null);
 
-      const payload = toOwnerPayload(value, Boolean(editingOwnerId));
+      const payload = toOwnerPayload(value);
       if (editingOwnerId) {
         await updateOwnerMutation.mutateAsync({
           id: editingOwnerId,
-          payload,
+          payload
         });
         setSubmitSuccess("Data owner berhasil diperbarui.");
       } else {
@@ -257,54 +229,47 @@ export function OwnersManager() {
 
       setEditingOwnerId(null);
       form.reset(defaultOwnerValues);
-    },
+    }
   });
 
   const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
   const selectedVendorId = useStore(form.store, (state) => state.values.vendorId);
-  const selectedVendor =
-    vendors.find((vendor) => vendor.id === selectedVendorId) ?? null;
+  const selectedVendor = vendors.find((vendor) => vendor.id === selectedVendorId) ?? null;
 
   const createOwnerMutation = useMutation({
     mutationFn: (payload: OwnerCreatePayload) =>
       readJson<OwnerRecord>("/api/admin/owners", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ownerKeys.all });
     },
     onError: (error: Error) => {
       setSubmitError(error.message);
-    },
+    }
   });
 
   const updateOwnerMutation = useMutation({
-    mutationFn: ({
-      id,
-      payload,
-    }: {
-      id: string;
-      payload: OwnerUpdatePayload;
-    }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: OwnerUpdatePayload }) =>
       readJson<OwnerRecord>(`/api/admin/owners/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ownerKeys.all });
     },
     onError: (error: Error) => {
       setSubmitError(error.message);
-    },
+    }
   });
 
   const deleteOwnerMutation = useMutation({
     mutationFn: (id: string) =>
       readJson<{ message: string }>(`/api/admin/owners/${id}`, {
-        method: "DELETE",
+        method: "DELETE"
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ownerKeys.all });
@@ -312,7 +277,7 @@ export function OwnersManager() {
     },
     onError: (error: Error) => {
       setSubmitError(error.message);
-    },
+    }
   });
 
   function resetOwnerForm() {
@@ -356,11 +321,11 @@ export function OwnersManager() {
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,0.75fr)]">
-      <section id="manage" className="rounded-[2rem] border border-border/70 bg-card p-5 shadow-sm">
+      <section id="manage" className="border-border/70 bg-card rounded-[2rem] border p-5 shadow-sm">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-semibold">Daftar Owner</h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Hubungkan akun owner ke vendor yang mereka kelola.
             </p>
           </div>
@@ -382,14 +347,14 @@ export function OwnersManager() {
             <Skeleton className="h-24 w-full rounded-[1.5rem]" />
           </div>
         ) : loadingError ? (
-          <div className="rounded-3xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <div className="border-destructive/20 bg-destructive/5 text-destructive rounded-3xl border px-4 py-3 text-sm">
             {loadingError}
           </div>
         ) : owners.length === 0 ? (
-          <div className="rounded-[1.5rem] border border-dashed border-border bg-muted/30 px-5 py-10 text-center">
-            <UserRound className="mx-auto mb-3 size-10 text-muted-foreground" />
+          <div className="border-border bg-muted/30 rounded-[1.5rem] border border-dashed px-5 py-10 text-center">
+            <UserRound className="text-muted-foreground mx-auto mb-3 size-10" />
             <p className="font-medium">Belum ada owner.</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Tambahkan akun owner untuk vendor yang sudah ada.
             </p>
           </div>
@@ -399,11 +364,14 @@ export function OwnersManager() {
               <Item
                 key={owner.id}
                 variant={editingOwnerId === owner.id ? "muted" : "outline"}
-                className="rounded-[1.5rem] border-border/70 p-4"
+                className="border-border/70 rounded-[1.5rem] p-4"
               >
                 <ItemHeader className="items-start">
                   <div className="flex items-start gap-3">
-                    <ItemMedia variant="icon" className="mt-1 rounded-2xl bg-primary/10 p-2 text-primary">
+                    <ItemMedia
+                      variant="icon"
+                      className="bg-primary/10 text-primary mt-1 rounded-2xl p-2"
+                    >
                       <UserRound className="size-4" />
                     </ItemMedia>
                     <ItemContent>
@@ -413,21 +381,33 @@ export function OwnersManager() {
                       </ItemDescription>
                     </ItemContent>
                   </div>
-                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                    OWNER
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-medium">
+                      OWNER
+                    </span>
+                    <span
+                      className={cn(
+                        "rounded-full px-3 py-1 text-xs font-medium",
+                        owner.isActive
+                          ? "bg-green-500/10 text-green-600"
+                          : "bg-yellow-500/10 text-yellow-600"
+                      )}
+                    >
+                      {owner.isActive ? "Aktif" : "Menunggu Aktivasi"}
+                    </span>
+                  </div>
                 </ItemHeader>
 
-                <div className="grid w-full gap-3 text-sm text-muted-foreground md:grid-cols-2">
-                  <div className="rounded-2xl bg-muted/40 px-3 py-2">
-                    <div className="mb-1 flex items-center gap-2 font-medium text-foreground">
+                <div className="text-muted-foreground grid w-full gap-3 text-sm md:grid-cols-2">
+                  <div className="bg-muted/40 rounded-2xl px-3 py-2">
+                    <div className="text-foreground mb-1 flex items-center gap-2 font-medium">
                       <Mail className="size-4" />
                       Email
                     </div>
                     <div>{owner.email ?? "-"}</div>
                   </div>
-                  <div className="rounded-2xl bg-muted/40 px-3 py-2">
-                    <div className="mb-1 flex items-center gap-2 font-medium text-foreground">
+                  <div className="bg-muted/40 rounded-2xl px-3 py-2">
+                    <div className="text-foreground mb-1 flex items-center gap-2 font-medium">
                       <Phone className="size-4" />
                       Telepon
                     </div>
@@ -436,11 +416,7 @@ export function OwnersManager() {
                 </div>
 
                 <ItemActions className="ml-auto">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => startEditOwner(owner)}
-                  >
+                  <Button type="button" variant="outline" onClick={() => startEditOwner(owner)}>
                     <Pencil className="size-4" />
                     Edit
                   </Button>
@@ -460,22 +436,20 @@ export function OwnersManager() {
         )}
       </section>
 
-      <section className="rounded-[2rem] border border-border/70 bg-card p-5 shadow-sm">
+      <section className="border-border/70 bg-card rounded-[2rem] border p-5 shadow-sm">
         <div className="mb-5 flex items-start justify-between gap-3">
           <div>
             <h2 className="text-xl font-semibold">
               {editingOwnerId ? "Edit Owner" : "Tambah Owner"}
             </h2>
-            <p className="text-sm text-muted-foreground">
-              Owner baru wajib memiliki password minimal 6 karakter.
+            <p className="text-muted-foreground text-sm">
+              {editingOwnerId
+                ? "Perbarui data owner yang dipilih."
+                : "Owner baru akan menerima email undangan untuk mengaktifkan akunnya."}
             </p>
           </div>
           {editingOwnerId ? (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={resetOwnerForm}
-            >
+            <Button type="button" variant="ghost" onClick={resetOwnerForm}>
               <Plus className="size-4" />
               Mode Baru
             </Button>
@@ -483,12 +457,12 @@ export function OwnersManager() {
         </div>
 
         {submitError ? (
-          <div className="mb-4 rounded-3xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <div className="border-destructive/20 bg-destructive/5 text-destructive mb-4 rounded-3xl border px-4 py-3 text-sm">
             {submitError}
           </div>
         ) : null}
         {submitSuccess ? (
-          <div className="mb-4 rounded-3xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
+          <div className="border-primary/20 bg-primary/5 text-primary mb-4 rounded-3xl border px-4 py-3 text-sm">
             {submitSuccess}
           </div>
         ) : null}
@@ -507,7 +481,7 @@ export function OwnersManager() {
                 name="name"
                 validators={{
                   onChange: ({ value }) =>
-                    value.trim().length < 3 ? "Nama owner minimal 3 karakter." : undefined,
+                    value.trim().length < 3 ? "Nama owner minimal 3 karakter." : undefined
                 }}
               >
                 {(field) => (
@@ -535,10 +509,8 @@ export function OwnersManager() {
                       return "Email wajib diisi.";
                     }
 
-                    return /^\S+@\S+\.\S+$/.test(value)
-                      ? undefined
-                      : "Format email tidak valid.";
-                  },
+                    return /^\S+@\S+\.\S+$/.test(value) ? undefined : "Format email tidak valid.";
+                  }
                 }}
               >
                 {(field) => (
@@ -580,8 +552,7 @@ export function OwnersManager() {
               <form.Field
                 name="vendorId"
                 validators={{
-                  onChange: ({ value }) =>
-                    !value ? "Vendor wajib dipilih." : undefined,
+                  onChange: ({ value }) => (!value ? "Vendor wajib dipilih." : undefined)
                 }}
               >
                 {(field) => (
@@ -608,7 +579,7 @@ export function OwnersManager() {
                   name="password"
                   validators={{
                     onChange: ({ value }) => validateEditedOwnerPassword(value),
-                    onSubmit: ({ value }) => validateEditedOwnerPassword(value),
+                    onSubmit: ({ value }) => validateEditedOwnerPassword(value)
                   }}
                 >
                   {(field) => (
@@ -628,42 +599,12 @@ export function OwnersManager() {
                     </Field>
                   )}
                 </form.Field>
-              ) : (
-                <form.Field
-                  key="create-password"
-                  name="password"
-                  validators={{
-                    onChange: ({ value }) => validateNewOwnerPassword(value),
-                    onSubmit: ({ value }) => validateNewOwnerPassword(value),
-                  }}
-                >
-                  {(field) => (
-                    <Field>
-                      <FieldLabel htmlFor={field.name}>Password</FieldLabel>
-                      <FieldContent>
-                        <Input
-                          id={field.name}
-                          type="password"
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(event) => field.handleChange(event.target.value)}
-                          placeholder="Minimal 6 karakter"
-                        />
-                        <FieldError errors={toFieldErrors(field.state.meta.errors)} />
-                      </FieldContent>
-                    </Field>
-                  )}
-                </form.Field>
-              )}
+              ) : null}
             </FieldGroup>
           </FieldSet>
 
           <div className="flex flex-wrap justify-end gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={resetOwnerForm}
-            >
+            <Button type="button" variant="outline" onClick={resetOwnerForm}>
               Reset
             </Button>
             <Button type="submit" disabled={isSubmitting}>
@@ -694,9 +635,7 @@ export function OwnersManager() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteOwnerMutation.isPending}>
-              Batal
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteOwnerMutation.isPending}>Batal</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               onClick={() => {

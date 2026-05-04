@@ -15,6 +15,8 @@ declare module "next-auth" {
     interface User {
         id: string;
         role: "SUPER_ADMIN" | "OWNER" | "STAFF" | "DRIVER";
+        vendorId?: string | null;
+        isActive?: boolean;
     }
 }
 

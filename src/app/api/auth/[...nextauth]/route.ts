@@ -21,7 +21,7 @@ export const authOptions = {
             async authorize(credentials) {
 
                 if (!credentials) {
-                    return null; // Jika credentials tidak ada, kembalikan null
+                    return null;
                 }
                 const user = await prisma.user.findUnique({
                     where: { email: credentials.email },
@@ -34,7 +34,14 @@ export const authOptions = {
 
                 if (!isValid) throw new Error("Wrong password");
 
-                return user;
+                return {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role.name as "SUPER_ADMIN" | "OWNER" | "STAFF" | "DRIVER",
+                    vendorId: user.vendorId,
+                    isActive: user.isActive,
+                };
             },
         }),
     ],

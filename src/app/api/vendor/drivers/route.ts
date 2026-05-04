@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
@@ -7,7 +8,7 @@ import bcrypt from "bcrypt";
 // Helper to authenticate and return vendorId
 async function authenticateVendorScope() {
   const session = await getServerSession(authOptions);
-  
+
   const role = session?.user?.role;
   if (!session || (role !== "OWNER" && role !== "STAFF")) {
     return { error: "Unauthorized", status: 403 };
@@ -30,11 +31,12 @@ export async function GET() {
 
     const drivers = await prisma.user.findMany({
       where: {
-        role: "DRIVER",
+        role: { name: "DRIVER" },
         vendorId: auth.vendorId,
       },
       include: {
-        driverProfile: true,
+        profile: true,
+        role: true,
       },
       orderBy: {
         createdAt: "desc",
@@ -78,7 +80,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check unique constraints for DriverProfile: simNumber, ktpNumber
-    const existingDriverProfile = await prisma.driverProfile.findFirst({
+    const existingDriverProfile = await prisma.userProfile.findFirst({
       where: {
         OR: [
           { simNumber },
@@ -99,9 +101,9 @@ export async function POST(req: NextRequest) {
         email,
         phone,
         password: hashedPassword,
-        role: "DRIVER",
+        role: { connect: { name: "DRIVER" } },
         vendorId: auth.vendorId,
-        driverProfile: {
+        profile: {
           create: {
             simNumber,
             ktpNumber,
@@ -113,7 +115,8 @@ export async function POST(req: NextRequest) {
         }
       },
       include: {
-        driverProfile: true,
+        profile: true,
+        role: true,
       }
     });
 

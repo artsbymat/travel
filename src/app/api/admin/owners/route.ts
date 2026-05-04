@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "crypto";
+import nodemailer from "nodemailer";
+import { render } from "@react-email/render";
 import { prisma } from "@/lib/prisma";
 import { hash } from "bcrypt";
 import { OwnerCreatePayload } from "@/types/owner-api";
+import { InvitationEmail } from "@/components/template/invitationEmail";
+
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.NODEMAILER_USER!,
+    pass: process.env.NODEMAILER_PASSWORD!,
+  },
+});
 
 // GET: List all owners
 export async function GET() {
@@ -14,6 +28,7 @@ export async function GET() {
         id: true,
         name: true,
         email: true,
+        isActive: true,
         phone: true,
         role: true,
         vendorId: true,
@@ -46,12 +61,12 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body: OwnerCreatePayload = await req.json();
-    const { name, email, phone, password, vendorId } = body;
+    const { name, email, phone, vendorId } = body;
 
     // Basic validation
-    if (!name || !email || !password || !vendorId) {
+    if (!name || !email || !vendorId) {
       return NextResponse.json(
-        { error: "Name, email, password, and vendorId are required" },
+        { error: "Name, email, and vendorId are required" },
         { status: 400 }
       );
     }
@@ -82,17 +97,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Hash password
-    const hashedPassword = await hash(password, 10);
+    // Generate secure random default password (owner must set their own via invitation)
+    const defaultPassword = randomBytes(16).toString("hex");
+    const hashedPassword = await hash(defaultPassword, 10);
 
-    // Create user
-
+    // Create user with isActive: false — will be activated after owner accepts invitation
     const user = await prisma.user.create({
       data: {
         name,
         email,
         phone,
         password: hashedPassword,
+        isActive: false,
         role: {
           connect: { name: "OWNER" },
         },
@@ -116,6 +132,39 @@ export async function POST(req: NextRequest) {
         },
       }
     })
+
+    // Create invitation token (valid for 7 days)
+    const inviteToken = randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    await prisma.passwordResetToken.create({
+      data: { token: inviteToken, userId: user.id, expiresAt },
+    });
+
+    // Send invitation email
+    const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+    const html = await render(
+      InvitationEmail({
+        userName: user.name,
+        inviteToken,
+        baseUrl,
+        vendorName: user.vendor?.name ?? undefined,
+        expiresInDays: 7,
+      }),
+    );
+
+    try {
+      await transporter.sendMail({
+        from: process.env.NODEMAILER_USER!,
+        to: email,
+        subject: "Undangan Akun Owner — FluxFleet",
+        html,
+      });
+      console.log("[create-owner] Invitation email sent to:", email);
+    } catch (mailError) {
+      console.error("[create-owner] Failed to send invitation email:", mailError);
+      // Don't fail the request — owner was created; admin can resend manually
+    }
 
     // Don't return password
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

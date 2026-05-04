@@ -7,7 +7,7 @@ import bcrypt from "bcrypt";
 // Helper to authenticate and verify ownership
 async function verifyOwnershipAndGetDriver(driverId: string) {
   const session = await getServerSession(authOptions);
-  
+
   const role = session?.user?.role;
   if (!session || (role !== "OWNER" && role !== "STAFF")) {
     return { error: "Unauthorized. Only Owner or Staff can manage drivers.", status: 403 };
@@ -20,14 +20,14 @@ async function verifyOwnershipAndGetDriver(driverId: string) {
 
   const driver = await prisma.user.findUnique({
     where: { id: driverId },
-    include: { driverProfile: true }
+    include: { profile: true, role: true },
   });
 
   if (!driver) {
     return { error: "Driver not found", status: 404 };
   }
 
-  if (driver.vendorId !== vendorId || driver.role !== "DRIVER") {
+  if (driver.vendorId !== vendorId || driver.role.name !== "DRIVER") {
     return { error: "Forbidden. You can only manage your own drivers.", status: 403 };
   }
 
@@ -69,9 +69,9 @@ export async function PUT(
     }
 
     // Check unique simNumber and ktpNumber if they are changing
-    const currentProfile = auth.driver?.driverProfile;
+    const currentProfile = auth.driver?.profile;
     if (simNumber && simNumber !== currentProfile?.simNumber) {
-      const existingProfile = await prisma.driverProfile.findFirst({
+      const existingProfile = await prisma.userProfile.findFirst({
         where: { simNumber }
       });
       if (existingProfile) {
@@ -80,7 +80,7 @@ export async function PUT(
     }
 
     if (ktpNumber && ktpNumber !== currentProfile?.ktpNumber) {
-      const existingProfile = await prisma.driverProfile.findFirst({
+      const existingProfile = await prisma.userProfile.findFirst({
         where: { ktpNumber }
       });
       if (existingProfile) {
@@ -102,7 +102,7 @@ export async function PUT(
       where: { id },
       data: {
         ...dataToUpdate,
-        driverProfile: {
+        profile: {
           update: {
             simNumber: simNumber || currentProfile?.simNumber,
             ktpNumber: ktpNumber || currentProfile?.ktpNumber,
@@ -114,13 +114,14 @@ export async function PUT(
         }
       },
       include: {
-        driverProfile: true,
+        profile: true,
       }
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...driverWithoutPassword } = updatedDriver;
     return NextResponse.json(driverWithoutPassword);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Update driver error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
@@ -143,7 +144,7 @@ export async function DELETE(
     });
 
     return NextResponse.json({ message: "Driver deleted successfully" });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Delete driver error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

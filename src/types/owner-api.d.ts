@@ -10,6 +10,5 @@ export interface OwnerCreatePayload {
   name: string;
   email: string;
   phone?: string;
-  password: string;
   vendorId: string;
 }

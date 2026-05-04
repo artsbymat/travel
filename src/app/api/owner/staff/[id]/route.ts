@@ -18,13 +18,21 @@ async function verifyOwnershipAndGetStaff(staffId: string) {
 
   const staff = await prisma.user.findUnique({
     where: { id: staffId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      role: true,
+      vendorId: true,
+    },
   });
 
   if (!staff) {
     return { error: "Staff not found", status: 404 };
   }
 
-  if (staff.vendorId !== vendorId || staff.role !== "STAFF") {
+  if (staff.vendorId !== vendorId || staff.role.name !== "STAFF") {
     return { error: "Forbidden. You can only manage your own staff.", status: 403 };
   }
 

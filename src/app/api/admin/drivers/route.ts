@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { Role } from "@prisma/client";
 import { hash } from "bcrypt";
 import { DriverCreatePayload } from "@/types/driver-api";
 
@@ -12,7 +11,7 @@ export async function GET(req: NextRequest) {
 
     const drivers = await prisma.user.findMany({
       where: {
-        role: Role.DRIVER,
+        role: { name: "DRIVER" },
         ...(vendorId ? { vendorId } : {}),
       },
       include: {
@@ -84,8 +83,8 @@ export async function POST(req: NextRequest) {
         email,
         phone,
         password: hashedPassword,
-        role: Role.DRIVER,
-        vendorId,
+        role: { connect: { name: "DRIVER" } },
+        vendor: { connect: { id: vendorId } },
       },
       include: {
         vendor: {

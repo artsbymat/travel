@@ -43,6 +43,7 @@ model User {
   email                    String?                @unique
   phone                    String?                @unique
   password                 String?
+  isActive                 Boolean                @default(false)
   roleId                   String
   vendorId                 String?
   createdAt                DateTime               @default(now())

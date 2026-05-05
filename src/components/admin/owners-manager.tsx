@@ -244,7 +244,7 @@ export function OwnersManager() {
         body: JSON.stringify(payload)
       }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ownerKeys.all });
+      await invalidateOwnersAndVendorOptions();
     },
     onError: (error: Error) => {
       setSubmitError(error.message);
@@ -259,7 +259,7 @@ export function OwnersManager() {
         body: JSON.stringify(payload)
       }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ownerKeys.all });
+      await invalidateOwnersAndVendorOptions();
     },
     onError: (error: Error) => {
       setSubmitError(error.message);
@@ -272,13 +272,20 @@ export function OwnersManager() {
         method: "DELETE"
       }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ownerKeys.all });
+      await invalidateOwnersAndVendorOptions();
       setSubmitSuccess("Owner berhasil dihapus.");
     },
     onError: (error: Error) => {
       setSubmitError(error.message);
     }
   });
+
+  async function invalidateOwnersAndVendorOptions() {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ownerKeys.all }),
+      queryClient.invalidateQueries({ queryKey: vendorOptionKeys.all })
+    ]);
+  }
 
   function resetOwnerForm() {
     setEditingOwnerId(null);

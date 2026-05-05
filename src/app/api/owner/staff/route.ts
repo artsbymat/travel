@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
     }
 
     const vendorId = session.user.vendorId;
+    console.log("Vendor ID in POST:", vendorId);
     if (!vendorId) {
       return NextResponse.json({ error: "Owner has no vendor assigned" }, { status: 400 });
     }
@@ -103,7 +104,8 @@ export async function POST(req: NextRequest) {
         phone: phone || null,
         password: hashedPassword,
         role: { connect: { name: "STAFF" } },
-        vendorId,
+        vendor: { connect: { id: vendorId } },
+        isActive: true,
       },
       select: {
         id: true,

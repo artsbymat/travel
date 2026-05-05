@@ -9,6 +9,7 @@ declare module "next-auth" {
             email?: string | null;
             image?: string | null;
             role: "SUPER_ADMIN" | "OWNER" | "STAFF" | "DRIVER";
+            vendorId?: string | null;
         };
     }
 
@@ -24,5 +25,6 @@ declare module "next-auth/jwt" {
     interface JWT {
         id: string;
         role: "SUPER_ADMIN" | "OWNER" | "STAFF" | "DRIVER";
+        vendorId?: string | null;
     }
 }

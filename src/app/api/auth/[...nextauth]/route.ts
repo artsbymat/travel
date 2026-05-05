@@ -28,12 +28,12 @@ export const authOptions = {
                     include: { role: true },
                 });
 
+
                 if (!user || !user.password || !credentials.password) throw new Error("User not found");
 
                 const isValid = await compare(credentials.password, user.password);
 
                 if (!isValid) throw new Error("Wrong password");
-
                 return {
                     id: user.id,
                     name: user.name,
@@ -52,7 +52,7 @@ export const authOptions = {
         }) {
             if (user) {
                 token.id = user.id;
-                token.role = user.role?.name;
+                token.role = user.role;
                 token.vendorId = user.vendorId;
             }
             return token;

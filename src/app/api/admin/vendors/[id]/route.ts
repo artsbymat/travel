@@ -15,10 +15,7 @@ export async function GET(req: NextRequest, { params }: Props) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || (session.user as any).role !== "SUPER_ADMIN") {
-      return NextResponse.json(
-        { error: "Unauthorized." },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Unauthorized." }, { status: 403 });
     }
 
     const { id } = await params;
@@ -34,8 +31,8 @@ export async function GET(req: NextRequest, { params }: Props) {
             debt: true,
             pendingIn: true,
             totalEarned: true,
-            updatedAt: true,
-          },
+            updatedAt: true
+          }
         },
         users: {
           select: {
@@ -43,21 +40,21 @@ export async function GET(req: NextRequest, { params }: Props) {
             name: true,
             email: true,
             phone: true,
-            role: true,
-          },
+            role: true
+          }
         },
         ewallets: {
-          where: { isActive: true },
+          where: { isActive: true }
         },
         _count: {
           select: {
             users: true,
             vehicles: true,
             billings: true,
-            settlements: true,
-          },
-        },
-      },
+            settlements: true
+          }
+        }
+      }
     });
 
     if (!vendor) {
@@ -67,10 +64,7 @@ export async function GET(req: NextRequest, { params }: Props) {
     return NextResponse.json(vendor);
   } catch (error) {
     console.error("Error fetching vendor detail:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -79,10 +73,7 @@ export async function PATCH(req: NextRequest, { params }: Props) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || (session.user as any).role !== "SUPER_ADMIN") {
-      return NextResponse.json(
-        { error: "Unauthorized." },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Unauthorized." }, { status: 403 });
     }
 
     const { id } = await params;
@@ -90,7 +81,7 @@ export async function PATCH(req: NextRequest, { params }: Props) {
 
     // Check if vendor exists
     const vendor = await prisma.vendor.findUnique({
-      where: { id },
+      where: { id }
     });
 
     if (!vendor) {
@@ -126,7 +117,10 @@ export async function PATCH(req: NextRequest, { params }: Props) {
     // Validasi platform fee rate
     if (body.platformFeeRate !== undefined && body.platformFeeRate !== null) {
       if (body.platformFeeRate < 0 || body.platformFeeRate > 100) {
-        return NextResponse.json({ error: "Platform fee rate must be between 0 and 100" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Platform fee rate must be between 0 and 100" },
+          { status: 400 }
+        );
       }
     }
 
@@ -140,8 +134,8 @@ export async function PATCH(req: NextRequest, { params }: Props) {
       const existingVendor = await prisma.vendor.findFirst({
         where: {
           OR: conditions,
-          NOT: { id },
-        },
+          NOT: { id }
+        }
       });
 
       if (existingVendor) {
@@ -175,19 +169,16 @@ export async function PATCH(req: NextRequest, { params }: Props) {
             balance: true,
             debt: true,
             pendingIn: true,
-            totalEarned: true,
-          },
-        },
-      },
+            totalEarned: true
+          }
+        }
+      }
     });
 
     return NextResponse.json(updatedVendor);
   } catch (error) {
     console.error("Error updating vendor:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -196,10 +187,7 @@ export async function DELETE(req: NextRequest, { params }: Props) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || (session.user as any).role !== "SUPER_ADMIN") {
-      return NextResponse.json(
-        { error: "Unauthorized." },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Unauthorized." }, { status: 403 });
     }
 
     const { id } = await params;
@@ -212,10 +200,10 @@ export async function DELETE(req: NextRequest, { params }: Props) {
           select: {
             users: true,
             vehicles: true,
-            billings: true,
-          },
-        },
-      },
+            billings: true
+          }
+        }
+      }
     });
 
     if (!vendor) {
@@ -230,19 +218,25 @@ export async function DELETE(req: NextRequest, { params }: Props) {
 
       if (balance > 0) {
         return NextResponse.json(
-          { error: `Cannot delete vendor. Vendor still has balance: Rp${balance.toLocaleString("id-ID")}. Please settle first.` },
+          {
+            error: `Cannot delete vendor. Vendor still has balance: Rp${balance.toLocaleString("id-ID")}. Please settle first.`
+          },
           { status: 400 }
         );
       }
       if (debt > 0) {
         return NextResponse.json(
-          { error: `Cannot delete vendor. Vendor still has debt: Rp${debt.toLocaleString("id-ID")}. Please settle first.` },
+          {
+            error: `Cannot delete vendor. Vendor still has debt: Rp${debt.toLocaleString("id-ID")}. Please settle first.`
+          },
           { status: 400 }
         );
       }
       if (pendingIn > 0) {
         return NextResponse.json(
-          { error: `Cannot delete vendor. Vendor has pending incoming: Rp${pendingIn.toLocaleString("id-ID")}. Please wait for settlement.` },
+          {
+            error: `Cannot delete vendor. Vendor has pending incoming: Rp${pendingIn.toLocaleString("id-ID")}. Please wait for settlement.`
+          },
           { status: 400 }
         );
       }
@@ -251,7 +245,10 @@ export async function DELETE(req: NextRequest, { params }: Props) {
     // Cek apakah masih punya relasi aktif
     if (vendor._count.users > 0) {
       return NextResponse.json(
-        { error: `Cannot delete vendor. ${vendor._count.users} user(s) are still associated.` },
+        {
+          code: "VENDOR_HAS_OWNERS",
+          error: `Vendor masih memiliki ${vendor._count.users} owner/driver. Lepaskan owner dari vendor ini sebelum menghapus vendor.`
+        },
         { status: 400 }
       );
     }
@@ -275,9 +272,6 @@ export async function DELETE(req: NextRequest, { params }: Props) {
       );
     }
 
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

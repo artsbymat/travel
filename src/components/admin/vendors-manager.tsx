@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useStore } from "@tanstack/react-form";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Pencil, Plus, RefreshCw, Trash2, Users, Bus, Wallet } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   AlertDialog,
@@ -14,7 +15,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogMedia,
-  AlertDialogTitle,
+  AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +24,7 @@ import {
   ComboboxEmpty,
   ComboboxInput,
   ComboboxItem,
-  ComboboxList,
+  ComboboxList
 } from "@/components/ui/combobox";
 import {
   Field,
@@ -33,7 +34,7 @@ import {
   FieldGroup,
   FieldLabel,
   FieldSet,
-  FieldTitle,
+  FieldTitle
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -44,7 +45,7 @@ import {
   ItemGroup,
   ItemHeader,
   ItemMedia,
-  ItemTitle,
+  ItemTitle
 } from "@/components/ui/item";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
@@ -69,6 +70,10 @@ type VendorRecord = Vendor & {
   city?: City | null;
 };
 
+type ApiError = Error & {
+  code?: string;
+};
+
 type VendorFormValues = {
   name: string;
   slug: string;
@@ -91,12 +96,12 @@ type VendorFormValues = {
 };
 
 const vendorKeys = {
-  all: ["admin", "vendors"] as const,
+  all: ["admin", "vendors"] as const
 };
 
 const regionKeys = {
   provinces: (query: string) => ["regions", "provinces", query] as const,
-  cities: (provinceId: string, query: string) => ["regions", "cities", provinceId, query] as const,
+  cities: (provinceId: string, query: string) => ["regions", "cities", provinceId, query] as const
 };
 
 const defaultVendorValues: VendorFormValues = {
@@ -117,7 +122,7 @@ const defaultVendorValues: VendorFormValues = {
   platformFeeRate: "",
   acceptCash: true,
   isActive: true,
-  isHeld: false,
+  isHeld: false
 };
 
 const EMPTY_VENDORS: VendorRecord[] = [];
@@ -129,11 +134,17 @@ async function readJson<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(
+    const error = new Error(
       data && typeof data === "object" && "error" in data
         ? String(data.error)
         : "Request gagal diproses"
-    );
+    ) as ApiError;
+
+    if (data && typeof data === "object" && "code" in data) {
+      error.code = String(data.code);
+    }
+
+    throw error;
   }
 
   return data as T;
@@ -191,11 +202,10 @@ function toVendorFormValues(vendor?: VendorRecord | null, cities: City[] = []): 
     taxEnabled: vendor.taxEnabled ?? false,
     taxRate: vendor.taxRate != null ? String(vendor.taxRate) : "",
     taxName: vendor.taxName ?? "PPN",
-    platformFeeRate:
-      vendor.platformFeeRate != null ? String(vendor.platformFeeRate) : "",
+    platformFeeRate: vendor.platformFeeRate != null ? String(vendor.platformFeeRate) : "",
     acceptCash: vendor.acceptCash ?? true,
     isActive: vendor.isActive ?? true,
-    isHeld: vendor.isHeld ?? false,
+    isHeld: vendor.isHeld ?? false
   };
 }
 
@@ -216,12 +226,10 @@ function toVendorPayload(values: VendorFormValues): VendorCreatePayload | Vendor
     taxEnabled,
     taxRate: taxEnabled && values.taxRate.trim() ? Number(values.taxRate) : undefined,
     taxName: taxEnabled ? values.taxName.trim() || "PPN" : undefined,
-    platformFeeRate: values.platformFeeRate.trim()
-      ? Number(values.platformFeeRate)
-      : undefined,
+    platformFeeRate: values.platformFeeRate.trim() ? Number(values.platformFeeRate) : undefined,
     acceptCash: values.acceptCash,
     isActive: values.isActive,
-    isHeld: values.isHeld,
+    isHeld: values.isHeld
   };
 }
 
@@ -237,7 +245,7 @@ function ToggleField({
   label,
   description,
   checked,
-  onChange,
+  onChange
 }: {
   label: string;
   description: string;
@@ -247,13 +255,13 @@ function ToggleField({
   return (
     <Field
       orientation="horizontal"
-      className="items-start rounded-3xl border border-border/70 bg-background px-4 py-3"
+      className="border-border/70 bg-background items-start rounded-3xl border px-4 py-3"
     >
       <input
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
         type="checkbox"
-        className="mt-1 size-4 rounded border-border text-primary focus:ring-2 focus:ring-ring"
+        className="border-border text-primary focus:ring-ring mt-1 size-4 rounded focus:ring-2"
       />
       <FieldContent>
         <FieldTitle>{label}</FieldTitle>
@@ -273,7 +281,7 @@ function RegionCombobox<TItem extends { id: string; name: string }>({
   description,
   disabled = false,
   isLoading = false,
-  onSearchChange,
+  onSearchChange
 }: {
   id: string;
   items: TItem[];
@@ -298,12 +306,7 @@ function RegionCombobox<TItem extends { id: string; name: string }>({
       isItemEqualToValue={(item, selectedItem) => item.id === selectedItem.id}
       id={id}
     >
-      <ComboboxInput
-        placeholder={placeholder}
-        className="w-full"
-        disabled={disabled}
-        showClear
-      >
+      <ComboboxInput placeholder={placeholder} className="w-full" disabled={disabled} showClear>
         {isLoading ? (
           <div className="mr-7 flex items-center">
             <Spinner className="text-muted-foreground" />
@@ -318,9 +321,7 @@ function RegionCombobox<TItem extends { id: string; name: string }>({
               <Item size="xs" className="p-0">
                 <ItemContent>
                   <ItemTitle>{item.name}</ItemTitle>
-                  {description ? (
-                    <ItemDescription>{description(item)}</ItemDescription>
-                  ) : null}
+                  {description ? <ItemDescription>{description(item)}</ItemDescription> : null}
                 </ItemContent>
               </Item>
             </ComboboxItem>
@@ -347,7 +348,7 @@ export function VendorsManager() {
 
   const vendorsQuery = useQuery({
     queryKey: vendorKeys.all,
-    queryFn: () => readJson<VendorRecord[]>("/api/admin/vendors"),
+    queryFn: () => readJson<VendorRecord[]>("/api/admin/vendors")
   });
 
   const provincesQuery = useQuery({
@@ -361,7 +362,7 @@ export function VendorsManager() {
 
       return readJson<Province[]>(`/api/provinces?${params.toString()}`, { signal });
     },
-    placeholderData: keepPreviousData,
+    placeholderData: keepPreviousData
   });
 
   const vendors = vendorsQuery.data ?? EMPTY_VENDORS;
@@ -376,7 +377,7 @@ export function VendorsManager() {
       if (editingVendorId) {
         await updateVendorMutation.mutateAsync({
           id: editingVendorId,
-          payload,
+          payload
         });
         setSubmitSuccess("Data vendor berhasil diperbarui.");
       } else {
@@ -389,7 +390,7 @@ export function VendorsManager() {
       form.reset(defaultVendorValues);
       setProvinceSearch("");
       setCitySearch("");
-    },
+    }
   });
 
   const selectedProvinceId = useStore(form.store, (state) => state.values.provinceId);
@@ -408,7 +409,7 @@ export function VendorsManager() {
       return readJson<City[]>(`/api/cities?${params.toString()}`, { signal });
     },
     enabled: Boolean(selectedProvinceId),
-    placeholderData: keepPreviousData,
+    placeholderData: keepPreviousData
   });
 
   const selectedVendor = vendors.find((vendor) => vendor.id === editingVendorId) ?? null;
@@ -417,63 +418,65 @@ export function VendorsManager() {
     () =>
       uniqueById([
         ...(provinceCitiesQuery.data ?? EMPTY_CITIES),
-        ...(selectedVendorCity ? [selectedVendorCity] : []),
+        ...(selectedVendorCity ? [selectedVendorCity] : [])
       ]),
     [provinceCitiesQuery.data, selectedVendorCity]
   );
-  const selectedProvince =
-    provinces.find((province) => province.id === selectedProvinceId) ?? null;
-  const selectedCity =
-    cities.find((city) => city.id === selectedCityId) ?? null;
+  const selectedProvince = provinces.find((province) => province.id === selectedProvinceId) ?? null;
+  const selectedCity = cities.find((city) => city.id === selectedCityId) ?? null;
 
   const createVendorMutation = useMutation({
     mutationFn: (payload: VendorCreatePayload) =>
       readJson<VendorRecord>("/api/admin/vendors", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: vendorKeys.all });
     },
     onError: (error: Error) => {
       setSubmitError(error.message);
-    },
+    }
   });
 
   const updateVendorMutation = useMutation({
-    mutationFn: ({
-      id,
-      payload,
-    }: {
-      id: string;
-      payload: VendorUpdatePayload;
-    }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: VendorUpdatePayload }) =>
       readJson<VendorRecord>(`/api/admin/vendors/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: vendorKeys.all });
     },
     onError: (error: Error) => {
       setSubmitError(error.message);
-    },
+    }
   });
 
   const deleteVendorMutation = useMutation({
     mutationFn: (id: string) =>
       readJson<{ message: string }>(`/api/admin/vendors/${id}`, {
-        method: "DELETE",
+        method: "DELETE"
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: vendorKeys.all });
       setSubmitSuccess("Vendor berhasil dihapus.");
     },
-    onError: (error: Error) => {
+    onError: (error: ApiError) => {
+      if (error.code === "VENDOR_HAS_OWNERS") {
+        toast.error("Vendor masih memiliki owner/driver", {
+          description: error.message
+        });
+        return;
+      }
+
+      toast.error("Vendor gagal dihapus", {
+        description: error.message
+      });
       setSubmitError(error.message);
-    },
+    }
   });
 
   useEffect(() => {
@@ -534,6 +537,19 @@ export function VendorsManager() {
     setSubmitSuccess(null);
   }
 
+  function requestDeleteVendor(vendor: VendorRecord) {
+    const ownerCount = vendor._count?.users ?? 0;
+
+    if (ownerCount > 0) {
+      toast.error("Vendor masih memiliki owner/driver", {
+        description: `Lepaskan ${ownerCount} owner/driver dari vendor ini sebelum menghapus vendor.`
+      });
+      return;
+    }
+
+    setVendorToDelete(vendor);
+  }
+
   async function confirmDeleteVendor() {
     if (!vendorToDelete) {
       return;
@@ -547,17 +563,15 @@ export function VendorsManager() {
   }
 
   const loading = vendorsQuery.isLoading || provincesQuery.isLoading;
-  const loadingError =
-    vendorsQuery.error?.message ||
-    provincesQuery.error?.message;
+  const loadingError = vendorsQuery.error?.message || provincesQuery.error?.message;
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
-      <section id="manage" className="rounded-[2rem] border border-border/70 bg-card p-5 shadow-sm">
+      <section id="manage" className="border-border/70 bg-card rounded-[2rem] border p-5 shadow-sm">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-semibold">Daftar Vendor</h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Admin dapat menambah, mengubah, dan menghapus vendor travel.
             </p>
           </div>
@@ -579,14 +593,14 @@ export function VendorsManager() {
             <Skeleton className="h-24 w-full rounded-[1.5rem]" />
           </div>
         ) : loadingError ? (
-          <div className="rounded-3xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <div className="border-destructive/20 bg-destructive/5 text-destructive rounded-3xl border px-4 py-3 text-sm">
             {loadingError}
           </div>
         ) : vendors.length === 0 ? (
-          <div className="rounded-[1.5rem] border border-dashed border-border bg-muted/30 px-5 py-10 text-center">
-            <Building2 className="mx-auto mb-3 size-10 text-muted-foreground" />
+          <div className="border-border bg-muted/30 rounded-[1.5rem] border border-dashed px-5 py-10 text-center">
+            <Building2 className="text-muted-foreground mx-auto mb-3 size-10" />
             <p className="font-medium">Belum ada vendor terdaftar.</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Gunakan form di samping untuk menambahkan vendor pertama.
             </p>
           </div>
@@ -596,22 +610,26 @@ export function VendorsManager() {
               <Item
                 key={vendor.id}
                 variant={editingVendorId === vendor.id ? "muted" : "outline"}
-                className="rounded-[1.5rem] border-border/70 p-4"
+                className="border-border/70 rounded-[1.5rem] p-4"
               >
                 <ItemHeader className="items-start">
                   <div className="flex items-start gap-3">
-                    <ItemMedia variant="icon" className="mt-1 rounded-2xl bg-primary/10 p-2 text-primary">
+                    <ItemMedia
+                      variant="icon"
+                      className="bg-primary/10 text-primary mt-1 rounded-2xl p-2"
+                    >
                       <Building2 className="size-4" />
                     </ItemMedia>
                     <ItemContent>
                       <ItemTitle>{vendor.name}</ItemTitle>
                       <ItemDescription>
-                        {vendor.city?.name ?? "Kota belum dipilih"} • {vendor.email ?? "Tanpa email"}
+                        {vendor.city?.name ?? "Kota belum dipilih"} •{" "}
+                        {vendor.email ?? "Tanpa email"}
                       </ItemDescription>
                     </ItemContent>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                    <span className="bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-medium">
                       {vendor.isActive ? "Aktif" : "Nonaktif"}
                     </span>
                     {vendor.isHeld ? (
@@ -622,49 +640,45 @@ export function VendorsManager() {
                   </div>
                 </ItemHeader>
 
-                <div className="grid w-full gap-3 text-sm text-muted-foreground md:grid-cols-4">
-                  <div className="rounded-2xl bg-muted/40 px-3 py-2">
-                    <div className="mb-1 flex items-center gap-2 font-medium text-foreground">
+                <div className="text-muted-foreground grid w-full gap-3 text-sm md:grid-cols-4">
+                  <div className="bg-muted/40 rounded-2xl px-3 py-2">
+                    <div className="text-foreground mb-1 flex items-center gap-2 font-medium">
                       <Wallet className="size-4" />
                       Saldo Wallet
                     </div>
-                    <div className="font-semibold text-primary">
+                    <div className="text-primary font-semibold">
                       {formatCurrency(vendor.wallet?.balance ?? 0)}
                     </div>
                   </div>
-                  <div className="rounded-2xl bg-muted/40 px-3 py-2">
-                    <div className="mb-1 flex items-center gap-2 font-medium text-foreground">
+                  <div className="bg-muted/40 rounded-2xl px-3 py-2">
+                    <div className="text-foreground mb-1 flex items-center gap-2 font-medium">
                       <Users className="size-4" />
                       Owner/User
                     </div>
                     <div>{vendor._count?.users ?? 0}</div>
                   </div>
-                  <div className="rounded-2xl bg-muted/40 px-3 py-2">
-                    <div className="mb-1 flex items-center gap-2 font-medium text-foreground">
+                  <div className="bg-muted/40 rounded-2xl px-3 py-2">
+                    <div className="text-foreground mb-1 flex items-center gap-2 font-medium">
                       <Bus className="size-4" />
                       Armada
                     </div>
                     <div>{vendor._count?.vehicles ?? 0}</div>
                   </div>
-                  <div className="rounded-2xl bg-muted/40 px-3 py-2">
-                    <div className="mb-1 font-medium text-foreground">Biaya Platform</div>
+                  <div className="bg-muted/40 rounded-2xl px-3 py-2">
+                    <div className="text-foreground mb-1 font-medium">Biaya Platform</div>
                     <div>{formatNumber(vendor.platformFeeRate)}</div>
                   </div>
                 </div>
 
                 <ItemActions className="ml-auto">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => startEditVendor(vendor)}
-                  >
+                  <Button type="button" variant="outline" onClick={() => startEditVendor(vendor)}>
                     <Pencil className="size-4" />
                     Edit
                   </Button>
                   <Button
                     type="button"
                     variant="destructive"
-                    onClick={() => setVendorToDelete(vendor)}
+                    onClick={() => requestDeleteVendor(vendor)}
                     disabled={deleteVendorMutation.isPending}
                   >
                     <Trash2 className="size-4" />
@@ -677,22 +691,18 @@ export function VendorsManager() {
         )}
       </section>
 
-      <section className="rounded-[2rem] border border-border/70 bg-card p-5 shadow-sm">
+      <section className="border-border/70 bg-card rounded-[2rem] border p-5 shadow-sm">
         <div className="mb-5 flex items-start justify-between gap-3">
           <div>
             <h2 className="text-xl font-semibold">
               {editingVendorId ? "Edit Vendor" : "Tambah Vendor"}
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Form ini memakai TanStack Form untuk validasi dan submit state.
             </p>
           </div>
           {editingVendorId ? (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={resetVendorForm}
-            >
+            <Button type="button" variant="ghost" onClick={resetVendorForm}>
               <Plus className="size-4" />
               Mode Baru
             </Button>
@@ -700,12 +710,12 @@ export function VendorsManager() {
         </div>
 
         {submitError ? (
-          <div className="mb-4 rounded-3xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <div className="border-destructive/20 bg-destructive/5 text-destructive mb-4 rounded-3xl border px-4 py-3 text-sm">
             {submitError}
           </div>
         ) : null}
         {submitSuccess ? (
-          <div className="mb-4 rounded-3xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
+          <div className="border-primary/20 bg-primary/5 text-primary mb-4 rounded-3xl border px-4 py-3 text-sm">
             {submitSuccess}
           </div>
         ) : null}
@@ -725,7 +735,7 @@ export function VendorsManager() {
                   name="name"
                   validators={{
                     onChange: ({ value }) =>
-                      value.trim().length < 3 ? "Nama vendor minimal 3 karakter." : undefined,
+                      value.trim().length < 3 ? "Nama vendor minimal 3 karakter." : undefined
                   }}
                 >
                   {(field) => (
@@ -754,8 +764,7 @@ export function VendorsManager() {
                 <form.Field
                   name="slug"
                   validators={{
-                    onChange: ({ value }) =>
-                      !value.trim() ? "Slug wajib diisi." : undefined,
+                    onChange: ({ value }) => (!value.trim() ? "Slug wajib diisi." : undefined)
                   }}
                 >
                   {(field) => (
@@ -788,7 +797,7 @@ export function VendorsManager() {
                     onChange: ({ value }) =>
                       value && !/^\S+@\S+\.\S+$/.test(value)
                         ? "Format email tidak valid."
-                        : undefined,
+                        : undefined
                   }}
                 >
                   {(field) => (
@@ -981,7 +990,7 @@ export function VendorsManager() {
                     onChange: ({ value }) =>
                       value && Number.isNaN(Number(value))
                         ? "Biaya platform harus berupa angka."
-                        : undefined,
+                        : undefined
                   }}
                 >
                   {(field) => (
@@ -1002,7 +1011,6 @@ export function VendorsManager() {
                 </form.Field>
               </div>
 
-
               <div className="grid gap-3">
                 <form.Field name="taxEnabled">
                   {(field) => (
@@ -1014,9 +1022,7 @@ export function VendorsManager() {
                     />
                   )}
                 </form.Field>
-                <form.Subscribe
-                  selector={(state) => state.values.taxEnabled}
-                >
+                <form.Subscribe selector={(state) => state.values.taxEnabled}>
                   {(taxEnabled) =>
                     taxEnabled ? (
                       <div className="grid gap-4 md:grid-cols-2">
@@ -1042,7 +1048,7 @@ export function VendorsManager() {
                             onChange: ({ value }) =>
                               value && Number.isNaN(Number(value))
                                 ? "Tarif pajak harus berupa angka."
-                                : undefined,
+                                : undefined
                           }}
                         >
                           {(field) => (
@@ -1100,11 +1106,7 @@ export function VendorsManager() {
           </FieldSet>
 
           <div className="flex flex-wrap justify-end gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={resetVendorForm}
-            >
+            <Button type="button" variant="outline" onClick={resetVendorForm}>
               Reset
             </Button>
             <Button type="submit" disabled={isSubmitting}>
@@ -1135,12 +1137,11 @@ export function VendorsManager() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteVendorMutation.isPending}>
-              Batal
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteVendorMutation.isPending}>Batal</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              onClick={() => {
+              onClick={(event) => {
+                event.preventDefault();
                 void confirmDeleteVendor();
               }}
               disabled={deleteVendorMutation.isPending}

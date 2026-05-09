@@ -4,14 +4,15 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/sidebar";
 import { Separator } from "@/components/ui/separator";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator
-} from "@/components/ui/breadcrumb";
+import { AppBreadcrumb } from "@/components/ui/app-breadcrumb";
+
+const SUPER_ADMIN_BREADCRUMB_LABELS = {
+  "/admin": "Super Admin Dashboard",
+  "/admin/vendors": "Manajemen Vendor",
+  "/admin/owners": "Manajemen Owner",
+  "/admin/reports": "Laporan Keuangan",
+  "/admin/users": "Manajemen Users"
+};
 
 export default async function SuperAdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
@@ -30,17 +31,11 @@ export default async function SuperAdminLayout({ children }: { children: React.R
               orientation="vertical"
               className="mr-2 data-vertical:h-4 data-vertical:self-auto"
             />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/admin">Super Admin</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Control Panel</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
+            <AppBreadcrumb
+              rootHref="/admin"
+              rootLabel="Super Admin"
+              routeLabels={SUPER_ADMIN_BREADCRUMB_LABELS}
+            />
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">

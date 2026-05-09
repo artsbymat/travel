@@ -1,11 +1,71 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "crypto";
+import nodemailer from "nodemailer";
+import { render } from "@react-email/render";
 import { prisma } from "@/lib/prisma";
 import { hash } from "bcrypt";
 import { OwnerUpdatePayload } from "@/types/owner-api";
+import { InvitationEmail } from "@/components/template/invitationEmail";
+
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.NODEMAILER_USER!,
+    pass: process.env.NODEMAILER_PASSWORD!,
+  },
+});
 
 type Props = {
   params: Promise<{ id: string }>;
 };
+
+async function sendOwnerInvitationEmail(user: {
+  id: string;
+  name: string;
+  email: string | null;
+  vendor?: { name: string } | null;
+}) {
+  if (!user.email) {
+    throw new Error("Owner email is required to send invitation");
+  }
+
+  await prisma.passwordResetToken.updateMany({
+    where: {
+      userId: user.id,
+      used: false,
+    },
+    data: {
+      used: true,
+    },
+  });
+
+  const inviteToken = randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+  await prisma.passwordResetToken.create({
+    data: { token: inviteToken, userId: user.id, expiresAt },
+  });
+
+  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const html = await render(
+    InvitationEmail({
+      userName: user.name,
+      inviteToken,
+      baseUrl,
+      vendorName: user.vendor?.name ?? undefined,
+      expiresInDays: 7,
+    }),
+  );
+
+  await transporter.sendMail({
+    from: process.env.NODEMAILER_USER!,
+    to: user.email,
+    subject: "Undangan Akun Owner — FluxFleet",
+    html,
+  });
+}
 
 // GET: Get single owner details
 export async function GET(req: NextRequest, { params }: Props) {
@@ -50,6 +110,8 @@ export async function PATCH(req: NextRequest, { params }: Props) {
     const { id } = await params;
     const body = await req.json();
     const { name, email, phone, password, vendorId } = body;
+    const nextEmail = typeof email === "string" ? email.trim() : undefined;
+    const nextPhone = typeof phone === "string" ? phone.trim() : undefined;
 
     // Check if owner exists
     const owner = await prisma.user.findFirst({
@@ -63,11 +125,43 @@ export async function PATCH(req: NextRequest, { params }: Props) {
       return NextResponse.json({ error: "Owner not found" }, { status: 404 });
     }
 
+    if (nextEmail && nextEmail !== owner.email) {
+      const existingEmail = await prisma.user.findFirst({
+        where: {
+          email: nextEmail,
+          NOT: { id },
+        },
+      });
+
+      if (existingEmail) {
+        return NextResponse.json(
+          { error: "User with this email already exists" },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (nextPhone && nextPhone !== owner.phone) {
+      const existingPhone = await prisma.user.findFirst({
+        where: {
+          phone: nextPhone,
+          NOT: { id },
+        },
+      });
+
+      if (existingPhone) {
+        return NextResponse.json(
+          { error: "User with this phone already exists" },
+          { status: 400 }
+        );
+      }
+    }
+
     // Prepare update data
     const updateData: OwnerUpdatePayload = {};
     if (name) updateData.name = name;
-    if (email) updateData.email = email;
-    if (phone) updateData.phone = phone;
+    if (nextEmail) updateData.email = nextEmail;
+    if (nextPhone) updateData.phone = nextPhone;
     if (vendorId) {
       // Verify vendor exists
       const vendor = await prisma.vendor.findUnique({
@@ -94,6 +188,15 @@ export async function PATCH(req: NextRequest, { params }: Props) {
         },
       },
     });
+
+    if (!updatedUser.isActive) {
+      try {
+        await sendOwnerInvitationEmail(updatedUser);
+        console.log("[update-owner] Invitation email sent to:", updatedUser.email);
+      } catch (mailError) {
+        console.error("[update-owner] Failed to send invitation email:", mailError);
+      }
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...userWithoutPassword } = updatedUser;

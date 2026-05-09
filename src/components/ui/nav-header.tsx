@@ -1,14 +1,9 @@
 import * as React from "react";
 import { ShieldCheckIcon } from "lucide-react";
 
-const ROLES = {
-  SUPER_ADMIN: "SUPER_ADMIN",
-  OWNER: "OWNER",
-  STAFF: "STAFF",
-  DRIVER: "DRIVER"
-} as const;
+import { cn } from "@/lib/utils";
 
-type Role = (typeof ROLES)[keyof typeof ROLES];
+type Role = "SUPER_ADMIN" | "OWNER" | "STAFF" | "DRIVER";
 
 const ROLE_CONFIG: Record<
   Role,
@@ -36,7 +31,7 @@ const ROLE_CONFIG: Record<
 };
 
 export function NavHeader({
-  appName = "MyAdmin",
+  appName = "Travel",
   role = "SUPER_ADMIN",
   icon = <ShieldCheckIcon className="h-5 w-5" />
 }: {
@@ -47,13 +42,13 @@ export function NavHeader({
   const roleConfig = ROLE_CONFIG[role];
 
   return (
-    <div className="flex items-center gap-3 px-2 py-2">
-      <div className="bg-primary text-primary-foreground flex h-9 w-9 items-center justify-center rounded-xl">
+    <div className="flex min-w-0 items-center gap-3 px-2 py-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+      <div className="bg-primary text-primary-foreground flex size-9 shrink-0 items-center justify-center rounded-xl group-data-[collapsible=icon]:size-8">
         {icon}
       </div>
-      <div className="flex flex-col gap-1 leading-tight">
-        <span className="text-sm font-semibold tracking-tight">{appName}</span>
-        <span className={`w-fit rounded-md px-2 text-[10px] font-medium ${roleConfig.className}`}>
+      <div className="flex min-w-0 flex-col gap-1 leading-tight group-data-[collapsible=icon]:hidden">
+        <span className="truncate text-sm font-semibold tracking-tight">{appName}</span>
+        <span className={cn("w-fit rounded-md px-2 text-[10px] font-medium", roleConfig.className)}>
           {roleConfig.label}
         </span>
       </div>

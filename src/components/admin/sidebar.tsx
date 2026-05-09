@@ -12,7 +12,7 @@ import {
   SidebarHeader,
   SidebarRail
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Building2, BookUser, ClipboardList } from "lucide-react";
+import { LayoutDashboard, Building2, ClipboardList } from "lucide-react";
 
 const data = {
   user: {
@@ -67,7 +67,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <NavHeader role="SUPER_ADMIN" />
+        <NavHeader appName="Travel" role="SUPER_ADMIN" />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />

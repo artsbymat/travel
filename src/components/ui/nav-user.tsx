@@ -1,9 +1,8 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { LogOutIcon } from "lucide-react";
-import { Button } from "./button";
 import { signOut } from "next-auth/react";
 
 export function NavUser({
@@ -18,20 +17,26 @@ export function NavUser({
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <div className="flex items-center gap-3 px-2 py-2">
-          <Avatar className="h-9 w-9">
+        <div className="flex min-w-0 items-center gap-3 px-2 py-2 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:gap-1 group-data-[collapsible=icon]:px-0">
+          <Avatar className="size-9 shrink-0 group-data-[collapsible=icon]:size-8">
             <AvatarImage src={user.avatar} alt={user.name} />
             <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
           </Avatar>
 
-          <div className="flex flex-1 flex-col overflow-hidden text-left">
+          <div className="flex min-w-0 flex-1 flex-col overflow-hidden text-left group-data-[collapsible=icon]:hidden">
             <span className="truncate text-sm font-medium">{user.name}</span>
             <span className="text-muted-foreground truncate text-xs">{user.email}</span>
           </div>
 
-          <Button onClick={() => signOut({ callbackUrl: "/login" })} variant="ghost">
-            <LogOutIcon className="h-4 w-4" />
-          </Button>
+          <SidebarMenuButton
+            aria-label="Logout"
+            className="ml-auto size-8 shrink-0 justify-center p-0 text-destructive hover:bg-destructive/10 hover:text-destructive group-data-[collapsible=icon]:ml-0"
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            tooltip="Logout"
+          >
+            <LogOutIcon />
+            <span className="sr-only">Logout</span>
+          </SidebarMenuButton>
         </div>
       </SidebarMenuItem>
     </SidebarMenu>

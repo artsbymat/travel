@@ -28,6 +28,29 @@ export async function requireOwner(): Promise<OwnerAuthSuccess | OwnerAuthFailur
     return { vendorId, userId: session.user.id };
 }
 
+/**
+ * Verifies that the request is made by an authenticated OWNER or STAFF who has a vendor.
+ */
+export async function requireVendorAuth(): Promise<OwnerAuthSuccess | OwnerAuthFailure> {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user) {
+        return { error: "Tidak terautentikasi.", status: 401 };
+    }
+
+    const role = session.user.role;
+    if (role !== "OWNER" && role !== "STAFF") {
+        return { error: "Akses ditolak. Hanya Owner atau Staff yang diizinkan.", status: 403 };
+    }
+
+    const vendorId = session.user.vendorId;
+    if (!vendorId) {
+        return { error: "User belum terhubung ke vendor manapun.", status: 400 };
+    }
+
+    return { vendorId, userId: session.user.id };
+}
+
 export function ownerAuthErrorResponse(failure: OwnerAuthFailure) {
     return NextResponse.json({ error: failure.error }, { status: failure.status });
 }

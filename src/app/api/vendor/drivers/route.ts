@@ -1,96 +1,124 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import bcrypt from "bcrypt";
+import {
+  requireVendorAuth,
+  isOwnerAuthFailure,
+  ownerAuthErrorResponse,
+} from "@/lib/owner-auth";
 
-// Helper to authenticate and return vendorId
-async function authenticateVendorScope() {
-  const session = await getServerSession(authOptions);
-
-  const role = session?.user?.role;
-  if (!session || (role !== "OWNER" && role !== "STAFF")) {
-    return { error: "Unauthorized", status: 403 };
-  }
-
-  const vendorId = session.user.vendorId;
-  if (!vendorId) {
-    return { error: "User has no vendor assigned", status: 400 };
-  }
-
-  return { vendorId, session };
-}
-
+// ─── GET /api/vendor/drivers ───
 export async function GET() {
-  try {
-    const auth = await authenticateVendorScope();
-    if (auth.error) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
-    }
+  const auth = await requireVendorAuth();
+  if (isOwnerAuthFailure(auth)) return ownerAuthErrorResponse(auth);
 
+  try {
     const drivers = await prisma.user.findMany({
       where: {
-        role: { name: "DRIVER" },
         vendorId: auth.vendorId,
+        role: { name: "DRIVER" },
       },
       include: {
         profile: true,
-        role: true,
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: { name: "asc" },
     });
 
-    return NextResponse.json(drivers);
-  } catch (error: any) {
-    console.error("Fetch drivers error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    // Map to match the expected Driver type in frontend if necessary, 
+    // but looking at DriverManager.tsx, it expects driverProfile
+    const formattedDrivers = drivers.map(d => ({
+      ...d,
+      driverProfile: d.profile
+    }));
+
+    return NextResponse.json(formattedDrivers);
+  } catch (error) {
+    console.error("Fetch vendor drivers error:", error);
+    return NextResponse.json(
+      { error: "Gagal mengambil data driver." },
+      { status: 500 }
+    );
   }
 }
 
+// ─── POST /api/vendor/drivers ───
 export async function POST(req: NextRequest) {
+  const auth = await requireVendorAuth();
+  if (isOwnerAuthFailure(auth)) return ownerAuthErrorResponse(auth);
+
   try {
-    const auth = await authenticateVendorScope();
-    if (auth.error) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
-    }
-
     const body = await req.json();
-    const { name, email, phone, password, simNumber, ktpNumber, address, photoUrl, ktpImage, simImage } = body;
+    const { 
+      name, email, phone, password, 
+      simNumber, ktpNumber, address, 
+      photoUrl, ktpImage, simImage 
+    } = body;
 
-    // Required fields validation
-    if (!name || !email || !password || !phone || !simNumber || !ktpNumber || !address) {
-      return NextResponse.json({ error: "Semua kolom wajib diisi kecuali lampiran foto." }, { status: 400 });
+    if (!name || !email || !phone || !password) {
+      return NextResponse.json(
+        { error: "Nama, email, telepon, dan password wajib diisi." },
+        { status: 400 }
+      );
     }
 
-    // Check unique constraints: email, phone
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email },
-          { phone }
-        ]
-      }
+    // Check if email already exists
+    const existingEmail = await prisma.user.findUnique({
+      where: { email },
     });
-
-    if (existingUser) {
-      return NextResponse.json({ error: "Email atau Nomor Telepon sudah terdaftar." }, { status: 400 });
+    if (existingEmail) {
+      return NextResponse.json(
+        { error: "Email sudah terdaftar." },
+        { status: 400 }
+      );
     }
 
-    // Check unique constraints for DriverProfile: simNumber, ktpNumber
-    const existingDriverProfile = await prisma.userProfile.findFirst({
-      where: {
-        OR: [
-          { simNumber },
-          { ktpNumber }
-        ]
+    // Check if phone already exists
+    const existingPhone = await prisma.user.findUnique({
+      where: { phone },
+    });
+    if (existingPhone) {
+      return NextResponse.json(
+        { error: "Nomor telepon sudah terdaftar." },
+        { status: 400 }
+      );
+    }
+
+    // Check if SIM number already exists
+    if (simNumber) {
+      const existingSim = await prisma.userProfile.findUnique({
+        where: { simNumber },
+      });
+      if (existingSim) {
+        return NextResponse.json(
+          { error: "Nomor SIM sudah terdaftar." },
+          { status: 400 }
+        );
       }
+    }
+
+    // Check if KTP number already exists
+    if (ktpNumber) {
+      const existingKtp = await prisma.userProfile.findUnique({
+        where: { ktpNumber },
+      });
+      if (existingKtp) {
+        return NextResponse.json(
+          { error: "Nomor KTP sudah terdaftar." },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Find DRIVER role
+    const driverRole = await prisma.role.findUnique({
+      where: { name: "DRIVER" },
     });
 
-    if (existingDriverProfile) {
-      return NextResponse.json({ error: "Nomor SIM atau Nomor KTP sudah terdaftar." }, { status: 400 });
+    if (!driverRole) {
+      return NextResponse.json(
+        { error: "Role DRIVER tidak ditemukan di sistem." },
+        { status: 500 }
+      );
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -101,30 +129,37 @@ export async function POST(req: NextRequest) {
         email,
         phone,
         password: hashedPassword,
-        role: { connect: { name: "DRIVER" } },
+        isActive: true, // Auto active for drivers added by vendor
         vendorId: auth.vendorId,
+        roleId: driverRole.id,
         profile: {
           create: {
+            fullName: name,
+            address,
             simNumber,
             ktpNumber,
-            address,
-            photoUrl: photoUrl || null,
-            ktpImage: ktpImage || null,
-            simImage: simImage || null,
-          }
-        }
+            photoUrl,
+            ktpImage,
+            simImage,
+          },
+        },
       },
       include: {
         profile: true,
-        role: true,
-      }
+      },
     });
 
-    // Exclude password from response
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...driverWithoutPassword } = newDriver;
-    return NextResponse.json(driverWithoutPassword, { status: 201 });
-  } catch (error: any) {
+    return NextResponse.json({
+      ...driverWithoutPassword,
+      driverProfile: driverWithoutPassword.profile
+    });
+  } catch (error) {
     console.error("Create driver error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Gagal membuat data driver." },
+      { status: 500 }
+    );
   }
 }

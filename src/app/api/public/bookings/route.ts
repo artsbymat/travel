@@ -1,0 +1,170 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { tripId, selectedSeats, passengers, contact, paymentMethod } = body;
+
+    if (!tripId || !selectedSeats || selectedSeats.length === 0 || !contact) {
+      return NextResponse.json(
+        { error: "Data booking tidak lengkap. Trip, kursi, dan kontak wajib diisi." },
+        { status: 400 }
+      );
+    }
+
+    // Process everything in a secure transaction block
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Fetch Trip & Vehicle & Vendor
+      const trip = await tx.trip.findUnique({
+        where: { id: tripId },
+        include: {
+          vehicle: {
+            include: {
+              vendor: true
+            }
+          }
+        }
+      });
+
+      if (!trip) {
+        throw new Error("Perjalanan tidak ditemukan.");
+      }
+
+      const vendor = trip.vehicle.vendor;
+
+      // 2. Validate Seat Availability (race conditions check)
+      const existingSeats = await tx.tripSeat.findMany({
+        where: {
+          tripId: tripId,
+          seatNo: { in: selectedSeats }
+        }
+      });
+
+      // If seats don't exist yet, we create them first as dynamic layout
+      if (existingSeats.length === 0) {
+        throw new Error("Pilihan kursi tidak valid.");
+      }
+
+      const unavailableSeats = existingSeats.filter((s) => s.status !== "AVAILABLE");
+      if (unavailableSeats.length > 0) {
+        const numbers = unavailableSeats.map((s) => s.seatNo).join(", ");
+        throw new Error(`Kursi [${numbers}] sudah dipesan oleh orang lain. Silakan pilih kursi lain.`);
+      }
+
+      // 3. Compute price details dynamically
+      const seatCount = selectedSeats.length;
+      const pricePerSeat = new Prisma.Decimal(trip.price);
+      const subtotal = pricePerSeat.times(seatCount);
+
+      // Compute dynamic platform fee rate percentage
+      const platformFeeRate = vendor.platformFeeRate ? new Prisma.Decimal(vendor.platformFeeRate) : new Prisma.Decimal(2.0); // Default 2%
+      const serviceFee = subtotal.times(platformFeeRate.div(100)); // Service fee is platformFeeRate% of subtotal
+
+      // Compute vendor tax if enabled
+      let taxAmount = new Prisma.Decimal(0);
+      if (vendor.taxEnabled && vendor.taxRate) {
+        taxAmount = subtotal.times(new Prisma.Decimal(vendor.taxRate).div(100));
+      }
+
+      const totalAmount = subtotal.plus(taxAmount).plus(serviceFee);
+      const platformFeeAmount = serviceFee;
+      const vendorAmount = subtotal.plus(taxAmount);
+
+      // 4. Map Payment Methods
+      let mappedMethod: "CASH" | "EWALLET" | "BANK_TRANSFER" | "QRIS" = "QRIS";
+      if (paymentMethod === "cash") {
+        mappedMethod = "CASH";
+      } else if (paymentMethod === "e-wallet") {
+        mappedMethod = "EWALLET";
+      } else if (paymentMethod === "virtual-account") {
+        mappedMethod = "BANK_TRANSFER";
+      }
+
+      // 5. Generate unique short bookingCode (Format: TRV-YYMM-RANDOM)
+      const now = new Date();
+      const yy = String(now.getFullYear()).substring(2);
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const bookingCode = `TRV-${yy}${mm}-${randomPart}`;
+
+      // 6. Serialize passengers, addresses, and extra comments in notes
+      const notesPayload = JSON.stringify({
+        pickupAddress: contact.pickupAddress,
+        dropoffAddress: contact.dropoffAddress,
+        customerNotes: contact.notes,
+        passengers: passengers.map((p: any, idx: number) => ({
+          fullName: p.fullName || "Penumpang " + (idx + 1),
+          phone: p.phone || contact.phone,
+          identityNumber: p.identityNumber || "",
+          seatNo: selectedSeats[idx]
+        }))
+      });
+
+      // 7. Create the Booking
+      const booking = await tx.booking.create({
+        data: {
+          bookingCode,
+          customerName: contact.name,
+          customerPhone: contact.phone,
+          customerEmail: contact.email,
+          tripId: trip.id,
+          seatCount,
+          subtotal,
+          taxAmount,
+          totalAmount,
+          platformFeeRate,
+          platformFeeAmount,
+          vendorAmount,
+          paymentMethod: mappedMethod,
+          paymentStatus: "UNPAID",
+          status: "PENDING",
+          notes: notesPayload,
+          expiresAt: new Date(Date.now() + 15 * 60 * 1000) // 15 mins expiry
+        }
+      });
+
+      // 8. Update TripSeat records to BOOKED and link to booking
+      await tx.tripSeat.updateMany({
+        where: {
+          tripId: tripId,
+          seatNo: { in: selectedSeats }
+        },
+        data: {
+          status: "BOOKED",
+          bookingId: booking.id
+        }
+      });
+
+      // 9. Generate Payment Transaction
+      const externalId = `TX-${booking.id}-${Date.now()}`;
+      await tx.paymentTransaction.create({
+        data: {
+          bookingId: booking.id,
+          provider: "midtrans",
+          externalId,
+          grossAmount: totalAmount,
+          status: "PENDING",
+          expiresAt: new Date(Date.now() + 15 * 60 * 1000)
+        }
+      });
+
+      // 10. Record TripActivity Audit Trail
+      await tx.tripActivity.create({
+        data: {
+          tripId: trip.id,
+          action: "BOOKING_CREATED",
+          description: `Booking baru dibuat oleh customer ${contact.name} (${bookingCode}) untuk ${seatCount} kursi: ${selectedSeats.join(", ")}.`
+        }
+      });
+
+      return booking;
+    });
+
+    return NextResponse.json({ success: true, booking: result });
+  } catch (error: any) {
+    console.error("Checkout booking transaction error:", error);
+    return NextResponse.json({ error: error.message || "Gagal membuat pemesanan." }, { status: 500 });
+  }
+}

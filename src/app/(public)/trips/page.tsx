@@ -1,14 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import { TripCard } from "@/components/public/trip-card";
 import { TripFilters } from "@/components/public/trip-filters";
 import { City, ComboboxCitySearch } from "@/components/public/combobox-city-search";
-import { useRouter } from "next/navigation";
-import { format } from "date-fns";
+import { useRouter, useSearchParams } from "next/navigation";
+import { format, parseISO } from "date-fns";
 import InputNumber from "@/components/public/input-number";
 import { Button } from "@/components/ui/button";
-import { Search, Settings2 } from "lucide-react";
+import { Search, Settings2, Loader2, Compass } from "lucide-react";
 import { DatePicker } from "@/components/public/date-picker";
 import type { SubmitEvent } from "react";
 
@@ -29,70 +30,12 @@ interface Trip {
   description: string;
 }
 
-const cities: City[] = [
-  { code: "JKT", name: "Jakarta", province: "DKI Jakarta" },
-  { code: "BDG", name: "Bandung", province: "West Java" },
-  { code: "SBY", name: "Surabaya", province: "East Java" },
-  { code: "DPS", name: "Denpasar", province: "Bali" },
-  { code: "MLG", name: "Malang", province: "East Java" }
-];
-
-const SAMPLE_TRIPS: Trip[] = [
-  {
-    id: "1",
-    origin: "Jakarta",
-    destination: "Bandung",
-    provider: "Toyota Hiace Super Grandia",
-    departureTime: "08:00 AM",
-    duration: "3 jam",
-    imageUrl: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80",
-    features: ["AC", "WiFi", "Port USB", "Kursi Reclining"],
-    amenities: ["AC", "WiFi", "Port USB", "Kursi Reclining"],
-    pricePerSeat: 150000,
-    availableSeats: 4,
-    totalSeats: 12,
-    vehicleType: "KELAS PREMIUM",
-    description:
-      "Pengalaman perjalanan eksekutif terbaik. Menampilkan kursi kapten khusus, ventilasi AC individual, dan arsitektur kabin kedap suara untuk kenyamanan perjalanan jauh."
-  },
-  {
-    id: "2",
-    origin: "Jakarta",
-    destination: "Bandung",
-    provider: "Toyota Innova Zenix",
-    departureTime: "10:00 AM",
-    duration: "3 jam",
-    imageUrl: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80",
-    features: ["AC", "WiFi", "Port USB"],
-    amenities: ["AC", "WiFi", "Port USB"],
-    pricePerSeat: 120000,
-    availableSeats: 2,
-    totalSeats: 6,
-    vehicleType: "KELAS BISNIS",
-    description:
-      "Keseimbangan antara kenyamanan dan efisiensi. Sangat cocok untuk pelancong bisnis yang menghargai privasi dan perjalanan yang mulus dengan kursi ergonomis untuk hingga 6 penumpang."
-  },
-  {
-    id: "3",
-    origin: "Jakarta",
-    destination: "Bandung",
-    provider: "Toyota Avanza",
-    departureTime: "01:00 PM",
-    duration: "3.5 jam",
-    imageUrl: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&q=80",
-    features: ["AC", "Tol"],
-    amenities: ["AC", "Tol"],
-    pricePerSeat: 80000,
-    availableSeats: 7,
-    totalSeats: 7,
-    vehicleType: "KELAS EKONOMI",
-    description:
-      "Perjalanan yang andal dan esensial. Pilihan kami yang paling hemat biaya untuk perjalanan singkat tanpa mengorbankan standar keselamatan dan perawatan armada."
-  }
-];
-
-export default function TripsPage() {
+function TripsPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Search filter states
+  const [cities, setCities] = useState<City[]>([]);
   const [origin, setOrigin] = useState<City | null>(null);
   const [destination, setDestination] = useState<City | null>(null);
   const [departureDate, setDepartureDate] = useState<Date | undefined>(new Date());
@@ -103,19 +46,140 @@ export default function TripsPage() {
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState<boolean>(false);
 
+  // Dynamic lists and status states
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingCities, setLoadingCities] = useState(true);
+
+  // 1. Fetch cities from database on mount
+  useEffect(() => {
+    async function loadCities() {
+      try {
+        setLoadingCities(true);
+        const res = await fetch("/api/cities?limit=100");
+        if (res.ok) {
+          const data = await res.json();
+          // Map backend schema (id, name, code, province) to front-end City format
+          const formatted = data.map((c: any) => ({
+            code: c.code || c.id,
+            name: c.name,
+            province: c.province?.name || ""
+          }));
+          setCities(formatted);
+        }
+      } catch (err) {
+        console.error("Failed to load cities from DB:", err);
+      } finally {
+        setLoadingCities(false);
+      }
+    }
+    loadCities();
+  }, []);
+
+  // 2. Extract and pre-fill search fields from URL search parameters on load/change
+  useEffect(() => {
+    const urlOrigin = searchParams.get("origin");
+    const urlDest = searchParams.get("destination");
+    const urlDate = searchParams.get("date");
+    const urlPassengers = searchParams.get("passengers");
+
+    if (urlOrigin) {
+      const match = cities.find(
+        (c) =>
+          c.code.toLowerCase() === urlOrigin.toLowerCase() ||
+          c.name.toLowerCase() === urlOrigin.toLowerCase()
+      );
+      if (match) {
+        setOrigin(match);
+      } else {
+        // Safe fallback: populate from URL directly so the search is NOT blocked
+        setOrigin({ code: urlOrigin, name: urlOrigin, province: "" });
+      }
+    }
+    if (urlDest) {
+      const match = cities.find(
+        (c) =>
+          c.code.toLowerCase() === urlDest.toLowerCase() ||
+          c.name.toLowerCase() === urlDest.toLowerCase()
+      );
+      if (match) {
+        setDestination(match);
+      } else {
+        // Safe fallback: populate from URL directly so the search is NOT blocked
+        setDestination({ code: urlDest, name: urlDest, province: "" });
+      }
+    }
+    if (urlDate) {
+      try {
+        setDepartureDate(parseISO(urlDate));
+      } catch (e) {}
+    }
+    if (urlPassengers) {
+      const pCount = Number(urlPassengers);
+      if (Number.isFinite(pCount) && pCount > 0) {
+        setPassengers(pCount);
+      }
+    }
+  }, [searchParams, cities]);
+
+  // 3. Fetch matching trips whenever URL search parameters change
+  useEffect(() => {
+    const urlOrigin = searchParams.get("origin");
+    const urlDest = searchParams.get("destination");
+    const urlDate = searchParams.get("date");
+    const urlPassengers = searchParams.get("passengers") || "1";
+
+    if (!urlOrigin || !urlDest || !urlDate) return;
+
+    async function loadTrips() {
+      try {
+        setLoading(true);
+        const query = new URLSearchParams({
+          origin: urlOrigin || "",
+          destination: urlDest || "",
+          date: urlDate || "",
+          passengers: urlPassengers
+        });
+        const res = await fetch(`/api/public/trips?${query.toString()}`);
+        if (res.ok) {
+          const data = await res.json();
+          setTrips(data);
+        }
+      } catch (err) {
+        console.error("Error loading trips:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadTrips();
+  }, [searchParams]);
+
+  // 4. Client-side sorting & filters (price, capacity, amenities)
   const filteredTrips = useMemo(() => {
-    return SAMPLE_TRIPS.filter((trip) => {
+    return trips.filter((trip) => {
       const priceMatch = trip.pricePerSeat >= minPrice && trip.pricePerSeat <= maxPrice;
-      return priceMatch;
+      const capacityMatch = !selectedCapacity
+        ? true
+        : selectedCapacity === "micro"
+          ? trip.totalSeats <= 6
+          : selectedCapacity === "medium"
+            ? trip.totalSeats > 6 && trip.totalSeats <= 12
+            : trip.totalSeats > 12;
+
+      const amenitiesMatch = selectedAmenities.every((amenity) =>
+        trip.amenities.some((a) => a.toLowerCase().includes(amenity.toLowerCase()))
+      );
+
+      return priceMatch && capacityMatch && amenitiesMatch;
     });
-  }, [minPrice, maxPrice, selectedCapacity, selectedAmenities]);
+  }, [trips, minPrice, maxPrice, selectedCapacity, selectedAmenities]);
 
   const handleSearch = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!origin || !destination || !departureDate) {
-      // todo: create alert component
-      console.error("Origin, destination, and date are required.");
+      alert("Kota asal, kota tujuan, dan tanggal keberangkatan wajib diisi.");
       return;
     }
 
@@ -130,7 +194,7 @@ export default function TripsPage() {
   };
 
   const handleSelectTrip = (tripId: string) => {
-    console.log("Selected trip:", tripId);
+    router.push(`/trips/${tripId}?passengers=${passengers}`);
   };
 
   return (
@@ -145,7 +209,7 @@ export default function TripsPage() {
             <div className="flex w-full flex-col md:w-auto">
               <label
                 htmlFor="origin"
-                className="text-primary mb-1 ml-3 text-xs font-medium uppercase"
+                className="mb-1 ml-3 text-xs font-bold tracking-wider text-[#0D9488] uppercase"
               >
                 Kota Asal
               </label>
@@ -154,7 +218,7 @@ export default function TripsPage() {
                 cities={cities}
                 value={origin}
                 onChange={setOrigin}
-                placeholder="Pilih kota asal"
+                placeholder={loadingCities ? "Loading kota..." : "Pilih kota asal"}
               />
             </div>
 
@@ -162,7 +226,7 @@ export default function TripsPage() {
             <div className="flex w-full flex-col md:w-auto">
               <label
                 htmlFor="destination"
-                className="text-primary mb-1 ml-3 text-xs font-medium uppercase"
+                className="mb-1 ml-3 text-xs font-bold tracking-wider text-[#0D9488] uppercase"
               >
                 Kota Tujuan
               </label>
@@ -171,13 +235,13 @@ export default function TripsPage() {
                 cities={cities}
                 value={destination}
                 onChange={setDestination}
-                placeholder="Pilih kota tujuan"
+                placeholder={loadingCities ? "Loading kota..." : "Pilih kota tujuan"}
               />
             </div>
 
             {/* Date */}
             <div className="flex flex-col">
-              <label className="text-primary mb-1 ml-3 text-xs font-medium uppercase">
+              <label className="mb-1 ml-3 text-xs font-bold tracking-wider text-[#0D9488] uppercase">
                 Tanggal Perjalanan
               </label>
               <DatePicker date={departureDate} setDate={setDepartureDate} />
@@ -187,7 +251,7 @@ export default function TripsPage() {
             <div className="flex w-full flex-col md:w-auto">
               <label
                 htmlFor="passengers"
-                className="text-primary mb-1 ml-3 text-xs font-medium uppercase"
+                className="mb-1 ml-3 text-xs font-bold tracking-wider text-[#0D9488] uppercase"
               >
                 Jumlah Penumpang
               </label>
@@ -201,13 +265,15 @@ export default function TripsPage() {
 
             <Button
               type="submit"
-              className="bg-accent-2 hover:bg-accent-2/90 h-12 w-full cursor-pointer self-end md:h-14 md:w-14 md:rounded-full"
+              disabled={loadingCities}
+              className="h-12 w-full cursor-pointer self-end bg-[#8B5E02] font-bold text-white shadow-md transition-all hover:bg-[#744E02] md:h-14 md:w-14 md:rounded-full"
               size="lg"
             >
               <Search className="size-5" />
-              <span className="inline md:hidden">Cari Perjalanan</span>
+              <span className="inline font-bold md:hidden">Cari Perjalanan</span>
             </Button>
           </form>
+
           {/* List Section */}
           <section className="mt-8">
             <div className="md:flex md:items-start md:gap-8">
@@ -277,15 +343,37 @@ export default function TripsPage() {
                   )}
                 </div>
 
+                {/* Live Loading/Trips Render */}
                 <div className="space-y-6">
-                  {filteredTrips.length > 0 ? (
-                    filteredTrips.map((trip) => (
-                      <TripCard key={trip.id} {...trip} onSelectTrip={handleSelectTrip} />
-                    ))
+                  {loading ? (
+                    <div className="flex flex-col items-center justify-center rounded-3xl border border-gray-100 bg-white p-24 text-center">
+                      <Loader2 className="h-12 w-12 animate-spin text-teal-700" />
+                      <p className="mt-4 text-sm font-bold tracking-widest text-gray-500 uppercase">
+                        Mencari Jadwal Terbaik...
+                      </p>
+                    </div>
+                  ) : filteredTrips.length > 0 ? (
+                    filteredTrips.map((trip) => {
+                      const originCityMatch = cities.find(c => c.name.toLowerCase() === trip.origin.toLowerCase());
+                      const destCityMatch = cities.find(c => c.name.toLowerCase() === trip.destination.toLowerCase());
+                      return (
+                        <TripCard
+                          key={trip.id}
+                          {...trip}
+                          originProvince={originCityMatch?.province}
+                          destinationProvince={destCityMatch?.province}
+                          onSelectTrip={handleSelectTrip}
+                        />
+                      );
+                    })
                   ) : (
-                    <div className="rounded-2xl border border-gray-100 bg-white p-20 text-center">
-                      <p className="font-bold tracking-widest text-gray-400 uppercase">
-                        Tidak ada kendaraan yang cocok dengan filter
+                    <div className="flex flex-col items-center justify-center rounded-3xl border border-gray-100 bg-white p-20 text-center">
+                      <Compass className="h-16 w-16 text-gray-300" />
+                      <p className="mt-4 font-bold tracking-widest text-gray-400 uppercase">
+                        Tidak ada kendaraan yang cocok
+                      </p>
+                      <p className="mt-1 text-sm text-gray-400">
+                        Coba sesuaikan tanggal, kota asal/tujuan, atau filter pencarian Anda.
                       </p>
                     </div>
                   )}
@@ -296,5 +384,24 @@ export default function TripsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TripsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
+          <div className="text-center">
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-solid border-teal-700 border-t-transparent"></div>
+            <p className="mt-4 text-xs font-bold tracking-widest text-gray-500 uppercase">
+              Memuat Hasil Pencarian...
+            </p>
+          </div>
+        </div>
+      }
+    >
+      <TripsPageContent />
+    </Suspense>
   );
 }

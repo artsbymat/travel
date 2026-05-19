@@ -193,6 +193,7 @@ model Vehicle {
   color             String?
   status            VehicleStatus          @default(ACTIVE)
   imageUrl          String?
+  images            Json?
   seatLayout        Json?
   vendorId          String
   createdAt         DateTime               @default(now())
@@ -206,36 +207,43 @@ model Vehicle {
 }
 
 model Trip {
-  id                String        @id @default(cuid())
-  origin            String
-  destination       String
-  originDetail      String?
-  destinationDetail String?
-  departureTime     DateTime
-  arrivalTime       DateTime?
-  originLat         Float?
-  originLng         Float?
-  price             Decimal       @db.Decimal(12, 2)
-  amenities         Amenity[]     @default([])
-  minBooking        Int           @default(1)
-  bookingDeadline   DateTime?
-  status            TripStatus    @default(SCHEDULED)
-  notes             String?
-  vehicleId         String
-  driverId          String?
-  templateId        String?
-  scheduleId        String?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  bookings          Booking[]
-  vehicle           Vehicle       @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  driver            User?         @relation("DriverTrips", fields: [driverId], references: [id])
-  template          TripTemplate? @relation("TripFromTemplate", fields: [templateId], references: [id])
-  seats             TripSeat[]
+  id                 String         @id @default(cuid())
+  origin             String
+  destination        String
+  originDetail       String?
+  destinationDetail  String?
+  departureTime      DateTime
+  arrivalTime        DateTime?
+  durationMinutes    Int?
+  originLat          Float?
+  originLng          Float?
+  price              Decimal        @db.Decimal(12, 2)
+  amenities          Amenity[]      @default([])
+  minBooking         Int            @default(1)
+  bookingDeadline    DateTime?
+  status             TripStatus     @default(SCHEDULED)
+  notes              String?
+  vehicleId          String
+  driverId           String?
+  templateId         String?
+  scheduleId         String?
+  rescheduledFromId  String?        @unique
+  rescheduledReason  String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  bookings           Booking[]
+  vehicle            Vehicle        @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver             User?          @relation("DriverTrips", fields: [driverId], references: [id])
+  template           TripTemplate?  @relation("TripFromTemplate", fields: [templateId], references: [id])
+  seats              TripSeat[]
+  activities         TripActivity[]
+  rescheduledFrom    Trip?          @relation("TripReschedule", fields: [rescheduledFromId], references: [id])
+  rescheduledTo      Trip?          @relation("TripReschedule")
 
   @@index([vehicleId])
   @@index([driverId])
   @@index([templateId])
+  @@index([rescheduledFromId])
   @@index([origin, destination])
   @@index([departureTime])
   @@index([status])
@@ -467,6 +475,27 @@ model TripTemplateSchedule {
 }
 
 // ═══════════════════════════════════════════════
+// TRIP ACTIVITY (AUDIT LOG)
+// ═══════════════════════════════════════════════
+
+model TripActivity {
+  id          String   @id @default(cuid())
+  tripId      String
+  userId      String?
+  action      String
+  description String?
+  oldData     Json?
+  newData     Json?
+  createdAt   DateTime @default(now())
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// ═══════════════════════════════════════════════
 // FINANCIAL SYSTEM
 // ═══════════════════════════════════════════════
 
@@ -603,6 +632,8 @@ enum TripStatus {
   COMPLETED
   CANCELLED
   RESCHEDULED
+  DELAYED
+  WAITING_DRIVER
 }
 
 enum VehicleStatus {

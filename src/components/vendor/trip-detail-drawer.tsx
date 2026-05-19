@@ -268,7 +268,12 @@ export default function TripDetailDrawer() {
               </button>
             </>
           )}
-          <button className="trip-btn trip-btn-secondary trip-btn-sm" onClick={handleDuplicate} disabled={loading}>
+          <button
+            className="trip-btn trip-btn-secondary trip-btn-sm"
+            onClick={handleDuplicate}
+            disabled={loading || trip.vehicle?.status !== "ACTIVE"}
+            title={trip.vehicle?.status !== "ACTIVE" ? "Kendaraan tidak aktif atau sedang maintenance" : "Duplikat trip ke hari berikutnya"}
+          >
             📋 Duplikat
           </button>
         </div>

@@ -35,6 +35,13 @@ export async function POST(
       );
     }
 
+    if (trip.vehicle.status !== "ACTIVE") {
+      return NextResponse.json(
+        { error: `Kendaraan sedang dalam status ${trip.vehicle.status === "MAINTENANCE" ? "Service/Maintenance" : "Tidak Aktif"}. Tidak dapat membuat jadwal perjalanan baru.` },
+        { status: 400 }
+      );
+    }
+
     // Create duplicate with next day departure
     const newDepartureTime = new Date(trip.departureTime);
     newDepartureTime.setDate(newDepartureTime.getDate() + 1);

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   AirVent,
@@ -28,6 +29,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { SteeringWheel } from "@/components/icons";
 
+const LeafletMapPicker = dynamic(() => import("@/components/map/LeafletMapPicker"), { ssr: false });
+
 type SeatStatus = "available" | "booked" | "locked";
 
 interface Seat {
@@ -48,6 +51,8 @@ interface Contact {
   phone: string;
   email: string;
   pickupAddress: string;
+  pickupLat: number | null;
+  pickupLng: number | null;
   dropoffAddress: string;
   notes: string;
 }
@@ -105,6 +110,8 @@ export default function DetailTrip() {
     phone: "",
     email: "",
     pickupAddress: "",
+    pickupLat: null,
+    pickupLng: null,
     dropoffAddress: "",
     notes: ""
   });
@@ -125,7 +132,6 @@ export default function DetailTrip() {
           // Pre-fill addresses based on origin/destination details
           setContact((prev) => ({
             ...prev,
-            pickupAddress: data.trip.pickupPoint || "",
             dropoffAddress: data.trip.dropoffPoint || ""
           }));
         } else {
@@ -245,6 +251,15 @@ export default function DetailTrip() {
 
   const updateContact = (field: keyof Contact, value: string) => {
     setContact((current) => ({ ...current, [field]: value }));
+  };
+
+  const handlePickupMapChange = (data: { lat: number; lng: number; address: string }) => {
+    setContact((current) => ({
+      ...current,
+      pickupLat: data.lat,
+      pickupLng: data.lng,
+      pickupAddress: data.address,
+    }));
   };
 
   // 3. Submit dynamic booking to backend
@@ -497,7 +512,7 @@ export default function DetailTrip() {
                 onChange={updatePassenger}
               />
 
-              <ContactForm contact={contact} onChange={updateContact} />
+              <ContactForm contact={contact} onChange={updateContact} onMapChange={handlePickupMapChange} />
 
               <PolicyAgreement checked={agreed} onChange={setAgreed} />
             </main>
@@ -890,10 +905,12 @@ function PassengerFormList({
 
 function ContactForm({
   contact,
-  onChange
+  onChange,
+  onMapChange
 }: {
   contact: Contact;
   onChange: (field: keyof Contact, value: string) => void;
+  onMapChange: (data: { lat: number; lng: number; address: string }) => void;
 }) {
   return (
     <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
@@ -929,12 +946,11 @@ function ContactForm({
             className="h-12 rounded-xl bg-gray-50 border-gray-200"
           />
         </Field>
-        <Field label="Alamat / Titik Penjemputan">
-          <Input
-            value={contact.pickupAddress}
-            onChange={(event) => onChange("pickupAddress", event.target.value)}
-            placeholder="Lokasi lengkap jemput"
-            className="h-12 rounded-xl bg-gray-50 border-gray-200"
+        <Field label="📍 Titik Penjemputan (Pilih di Peta)">
+          <LeafletMapPicker
+            value={contact.pickupLat && contact.pickupLng ? { lat: contact.pickupLat, lng: contact.pickupLng, address: contact.pickupAddress } : null}
+            onChange={onMapChange}
+            placeholder="Klik untuk pilih titik jemput di peta..."
           />
         </Field>
         <Field label="Alamat / Titik Pengantaran" className="md:col-span-2">

@@ -10,7 +10,14 @@ export async function POST(
     const resolvedParams = await params;
     const bookingId = resolvedParams.id;
     const body = await req.json();
-    const { refundMethod, bankName, bankAccountNo, bankAccountName, reason } = body;
+    const { refundMethod, bankName, bankAccountNo, bankAccountName, reason, customerPhone } = body;
+
+    if (!customerPhone) {
+      return NextResponse.json(
+        { error: "Nomor HP pemesan wajib diisi untuk verifikasi keamanan." },
+        { status: 400 }
+      );
+    }
 
     const chosenMethod = refundMethod === "CASH_PICKUP" ? "CASH_PICKUP" : "BANK_TRANSFER";
 
@@ -45,6 +52,15 @@ export async function POST(
 
     if (!booking) {
       return NextResponse.json({ error: "Booking tidak ditemukan." }, { status: 404 });
+    }
+
+    const cleanDbPhone = booking.customerPhone.replace(/[\s\-\+]/g, "");
+    const cleanInputPhone = customerPhone.replace(/[\s\-\+]/g, "");
+    if (!cleanDbPhone.includes(cleanInputPhone) && !cleanInputPhone.includes(cleanDbPhone)) {
+      return NextResponse.json(
+        { error: "Verifikasi gagal. Nomor HP tidak cocok dengan data booking." },
+        { status: 403 }
+      );
     }
 
     // 1. Check if there is already a Refund record

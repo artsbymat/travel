@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import {
   ArrowLeft,
   MapPin,
@@ -16,11 +17,14 @@ import {
   Loader2,
   Landmark,
   MessageSquare,
-  ShieldAlert
+  ShieldAlert,
+  Map
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FeedbackModal } from "@/components/ui/feedback-modal";
+
+const LeafletPickupMap = dynamic(() => import("@/components/map/LeafletPickupMap"), { ssr: false });
 
 interface BookingInfo {
   id: string;
@@ -33,6 +37,7 @@ interface BookingInfo {
   status: string;
   pickupLat?: number | null;
   pickupLng?: number | null;
+  pickupAddress?: string | null;
   notes?: string | null;
 }
 
@@ -270,6 +275,40 @@ export default function TripOperationsClient({
     }
   };
 
+  const renderBookingNotes = (notesStr?: string | null) => {
+    if (!notesStr) return null;
+    try {
+      const parsed = JSON.parse(notesStr);
+      const { pickupAddress, dropoffAddress, customerNotes } = parsed;
+      if (!pickupAddress && !dropoffAddress && !customerNotes) return null;
+      return (
+        <div className="mt-1.5 max-w-xs space-y-0.5 rounded-lg border bg-slate-50 p-2 text-[10px] leading-normal font-medium text-slate-500">
+          {pickupAddress && (
+            <div>
+              <strong className="text-slate-700">Jemput:</strong> {pickupAddress}
+            </div>
+          )}
+          {dropoffAddress && (
+            <div>
+              <strong className="text-slate-700">Antar:</strong> {dropoffAddress}
+            </div>
+          )}
+          {customerNotes && (
+            <div>
+              <strong className="text-slate-700">Catatan:</strong> {customerNotes}
+            </div>
+          )}
+        </div>
+      );
+    } catch (e) {
+      return (
+        <div className="mt-1.5 max-w-xs rounded-lg border bg-slate-50 p-2 text-[10px] leading-normal font-medium text-slate-500">
+          <strong>Catatan Jemputan:</strong> {notesStr}
+        </div>
+      );
+    }
+  };
+
   return (
     <div className="scaffold-page animate-in fade-in mx-auto max-w-3xl p-1 duration-300 sm:p-4">
       {/* Navigation Header */}
@@ -418,6 +457,35 @@ export default function TripOperationsClient({
         )}
       </div>
 
+      {/* Pickup Points Map */}
+      {(() => {
+        const pickupPoints = bookedSeats
+          .filter((s) => s.booking?.pickupLat && s.booking?.pickupLng)
+          .map((s) => ({
+            lat: s.booking!.pickupLat!,
+            lng: s.booking!.pickupLng!,
+            customerName: s.booking!.customerName,
+            seatNo: s.seatNo,
+            address: s.booking!.pickupAddress || undefined,
+            phone: s.booking!.customerPhone,
+          }));
+
+        if (pickupPoints.length === 0) return null;
+
+        return (
+          <div className="mb-6">
+            <div className="mb-3 flex items-center gap-2">
+              <Map size={18} className="text-teal-600" />
+              <h4 className="font-bold text-slate-800">Peta Titik Penjemputan</h4>
+              <span className="ml-auto rounded-full border border-teal-200 bg-teal-50 px-2.5 py-0.5 text-[10px] font-bold text-teal-700">
+                {pickupPoints.length} titik
+              </span>
+            </div>
+            <LeafletPickupMap points={pickupPoints} className="h-[320px]" />
+          </div>
+        );
+      })()}
+
       {/* Boarding Manifest Header */}
       <div className="mb-4 flex items-center justify-between">
         <div>
@@ -500,11 +568,7 @@ export default function TripOperationsClient({
                         )
                       )}
                     </div>
-                    {booking.notes && (
-                      <div className="mt-1.5 max-w-xs rounded-lg border bg-slate-50 p-2 text-[10px] leading-normal font-medium text-slate-500">
-                        <strong>Catatan Jemputan:</strong> {booking.notes}
-                      </div>
-                    )}
+                    {renderBookingNotes(booking.notes)}
                   </div>
                 </div>
 

@@ -276,6 +276,7 @@ model Booking {
   customerEmail       String?
   pickupLat           Float?
   pickupLng           Float?
+  pickupAddress       String?
   tripId              String
   seatCount           Int
   subtotal            Decimal              @db.Decimal(12, 2)

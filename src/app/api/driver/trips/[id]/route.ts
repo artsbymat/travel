@@ -128,14 +128,31 @@ export async function PATCH(
         );
       }
 
-      const activity = await prisma.tripActivity.create({
-        data: {
-          tripId,
-          userId: driverId,
-          action: "BOARDING_CHECK_IN",
-          description: `Check-in: Penumpang ${customerName} (Kursi ${seatNo}) boarding.`,
-          newData: { bookingId, seatNo, customerName },
-        },
+      const activity = await prisma.$transaction(async (tx) => {
+        const booking = await tx.booking.findUnique({
+          where: { id: bookingId }
+        });
+
+        if (booking && booking.paymentMethod === "CASH" && booking.paymentStatus !== "PAID") {
+          await tx.booking.update({
+            where: { id: bookingId },
+            data: {
+              paymentStatus: "PAID",
+              paidAt: new Date(),
+              status: "CONFIRMED"
+            }
+          });
+        }
+
+        return await tx.tripActivity.create({
+          data: {
+            tripId,
+            userId: driverId,
+            action: "BOARDING_CHECK_IN",
+            description: `Check-in: Penumpang ${customerName} (Kursi ${seatNo}) boarding.${booking && booking.paymentMethod === "CASH" ? " Pembayaran tunai diterima oleh driver." : ""}`,
+            newData: { bookingId, seatNo, customerName },
+          },
+        });
       });
       return NextResponse.json(activity);
     }

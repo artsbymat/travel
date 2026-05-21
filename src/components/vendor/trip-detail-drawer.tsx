@@ -126,7 +126,7 @@ export default function TripDetailDrawer() {
 
           {/* Pricing */}
           <div className="trip-detail-section">
-            <div className="trip-detail-section-title">Harga & Kursi</div>
+            <div className="trip-detail-section-title">Harga & Syarat</div>
             <div className="trip-detail-grid">
               <div className="trip-detail-item">
                 <span className="trip-detail-label">Harga/Kursi</span>
@@ -137,6 +137,10 @@ export default function TripDetailDrawer() {
                 <span className="trip-detail-value">
                   {seatsBooked}/{totalSeats} terisi • {seatsAvailable} tersedia
                 </span>
+              </div>
+              <div className="trip-detail-item">
+                <span className="trip-detail-label">Min. Keberangkatan</span>
+                <span className="trip-detail-value">{trip.minBooking || 1} kursi terisi</span>
               </div>
             </div>
           </div>

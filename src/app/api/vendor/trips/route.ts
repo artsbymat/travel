@@ -100,6 +100,7 @@ export async function POST(req: NextRequest) {
       amenities,
       bookingDeadline,
       notes,
+      minBooking,
     } = body;
 
     // Validation
@@ -122,6 +123,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "Kendaraan tidak ditemukan atau bukan milik vendor Anda." },
         { status: 404 }
+      );
+    }
+
+    // Check if vehicle has an active ongoing/delayed trip
+    const activeTrip = await prisma.trip.findFirst({
+      where: {
+        vehicleId,
+        status: { in: ["ONGOING", "DELAYED"] },
+      },
+    });
+
+    if (activeTrip) {
+      return NextResponse.json(
+        {
+          error: `Kendaraan ${vehicle.licensePlate} sedang dalam perjalanan aktif (${activeTrip.origin} → ${activeTrip.destination}). Selesaikan trip tersebut terlebih dahulu sebelum membuat trip baru.`,
+        },
+        { status: 400 }
       );
     }
 
@@ -160,6 +178,23 @@ export async function POST(req: NextRequest) {
 
     // Conflict detection: Driver
     if (driverId) {
+      // Check if driver has an active ongoing/delayed trip
+      const driverActiveTrip = await prisma.trip.findFirst({
+        where: {
+          driverId,
+          status: { in: ["ONGOING", "DELAYED"] },
+        },
+      });
+
+      if (driverActiveTrip) {
+        return NextResponse.json(
+          {
+            error: `Driver sedang dalam perjalanan aktif (${driverActiveTrip.origin} → ${driverActiveTrip.destination}). Selesaikan trip tersebut terlebih dahulu.`,
+          },
+          { status: 400 }
+        );
+      }
+
       const driverConflicts = await prisma.trip.findMany({
         where: {
           driverId,
@@ -202,6 +237,7 @@ export async function POST(req: NextRequest) {
           amenities: amenities || [],
           bookingDeadline: bookingDeadline ? new Date(bookingDeadline) : null,
           notes: notes || null,
+          minBooking: minBooking ? parseInt(minBooking.toString()) : 1,
           vehicleId,
           driverId: driverId || null,
           status: "SCHEDULED",

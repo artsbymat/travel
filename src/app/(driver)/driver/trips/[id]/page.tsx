@@ -97,6 +97,7 @@ export default async function DriverTripDetailPage({
             status: s.booking.status,
             pickupLat: s.booking.pickupLat,
             pickupLng: s.booking.pickupLng,
+            pickupAddress: s.booking.pickupAddress,
             notes: s.booking.notes
           }
         : null

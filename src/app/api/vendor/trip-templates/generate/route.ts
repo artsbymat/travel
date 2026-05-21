@@ -75,6 +75,19 @@ export async function POST(req: NextRequest) {
 
           if (duplicate) continue;
 
+          // Check if vehicle has an active ongoing/delayed trip
+          const activeTrip = await prisma.trip.findFirst({
+            where: {
+              vehicleId: schedule.vehicleId,
+              status: { in: ["ONGOING", "DELAYED"] },
+            }
+          });
+
+          if (activeTrip) {
+            errors.push(`Kendaraan ${schedule.vehicle.licensePlate} sedang dalam perjalanan aktif, skip generate.`);
+            continue;
+          }
+
           // Check for vehicle conflict
           const vehicleConflict = await prisma.trip.findFirst({
             where: {

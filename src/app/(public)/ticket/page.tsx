@@ -114,8 +114,10 @@ function SearchTicketContent() {
 
     if (code) {
       setBookingCodeInput(code);
-      if (phone) setPhoneInput(phone);
-      executeLookup(code, phone || "");
+      if (phone) {
+        setPhoneInput(phone);
+        executeLookup(code, phone);
+      }
     }
   }, [searchParams]);
 
@@ -150,8 +152,8 @@ function SearchTicketContent() {
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!bookingCodeInput.trim()) {
-      setErrorSearch("Kode booking wajib diisi.");
+    if (!bookingCodeInput.trim() || !phoneInput.trim()) {
+      setErrorSearch("Kode booking dan nomor HP pemesan wajib diisi.");
       return;
     }
     executeLookup(bookingCodeInput, phoneInput);
@@ -169,7 +171,8 @@ function SearchTicketContent() {
         bankName: refundMethod === "CASH_PICKUP" ? "CASH" : bankName,
         bankAccountNo: refundMethod === "CASH_PICKUP" ? "CASH" : bankAccountNo,
         bankAccountName: refundMethod === "CASH_PICKUP" ? "CASH" : bankAccountName,
-        reason: cancelReason
+        reason: cancelReason,
+        customerPhone: phoneInput
       };
 
       const res = await fetch(`/api/public/ticket/${booking.id}/refund`, {

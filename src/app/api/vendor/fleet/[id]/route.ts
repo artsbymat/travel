@@ -191,7 +191,7 @@ export async function PATCH(
                                 where: { id: B.id },
                                 data: {
                                     status: "CANCELLED",
-                                    paymentStatus: B.paymentStatus === "PAID" ? "REFUNDED" : "UNPAID",
+                                    paymentStatus: B.paymentStatus === "PAID" ? "PAID" : "UNPAID",
                                     notes: JSON.stringify({
                                         cancelledBy: "VENDOR",
                                         cancelReason: `Dibatalkan otomatis karena armada masuk status ${status} dan tidak ada jadwal pengganti dengan kapasitas cukup pada hari yang sama.`

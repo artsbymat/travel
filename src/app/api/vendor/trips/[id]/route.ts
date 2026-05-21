@@ -134,6 +134,7 @@ export async function PATCH(
       "destination",
       "originDetail",
       "destinationDetail",
+      "minBooking",
     ];
 
     const updateData: any = {};
@@ -146,7 +147,7 @@ export async function PATCH(
           updateData[field] = new Date(body[field]);
         } else if (field === "price") {
           updateData[field] = parseFloat(body[field]);
-        } else if (field === "durationMinutes") {
+        } else if (field === "durationMinutes" || field === "minBooking") {
           updateData[field] = parseInt(body[field].toString());
         } else {
           updateData[field] = body[field];

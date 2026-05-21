@@ -26,6 +26,7 @@ export default function EditTripDialog() {
         bookingDeadline: selectedTrip.bookingDeadline ? dayjs(selectedTrip.bookingDeadline).format("YYYY-MM-DDTHH:mm") : "",
         origin: selectedTrip.origin,
         destination: selectedTrip.destination,
+        minBooking: selectedTrip.minBooking || 1,
       });
       fetch("/api/vendor/fleet").then(r => r.json()).then(d => { if (Array.isArray(d)) setVehicles(d.filter((v: any) => v.status === "ACTIVE")); }).catch(() => {});
       fetch("/api/vendor/drivers").then(r => r.json()).then(d => { if (Array.isArray(d)) setDrivers(d); }).catch(() => {});
@@ -49,6 +50,7 @@ export default function EditTripDialog() {
     if (form.bookingDeadline) payload.bookingDeadline = new Date(form.bookingDeadline).toISOString();
     if (form.origin) payload.origin = form.origin;
     if (form.destination) payload.destination = form.destination;
+    if (form.minBooking !== undefined) payload.minBooking = parseInt(form.minBooking);
     await updateTrip(selectedTrip.id, payload);
   };
 
@@ -109,6 +111,12 @@ export default function EditTripDialog() {
                   <input className="trip-form-input" type="number" name="price" value={form.price || ""} onChange={handleChange} />
                 </div>
                 <div className="trip-form-group">
+                  <label className="trip-form-label">Min. Keberangkatan (Kursi)</label>
+                  <input className="trip-form-input" type="number" name="minBooking" value={form.minBooking || "1"} onChange={handleChange} min="1" />
+                </div>
+              </div>
+              <div className="trip-form-row">
+                <div className="trip-form-group">
                   <label className="trip-form-label">Status</label>
                   <select className="trip-form-select" name="status" value={form.status || ""} onChange={handleChange}>
                     <option value="SCHEDULED">Terjadwal</option>
@@ -118,6 +126,7 @@ export default function EditTripDialog() {
                     <option value="WAITING_DRIVER">Menunggu Driver</option>
                   </select>
                 </div>
+                <div className="trip-form-group" />
               </div>
               <div className="trip-form-group">
                 <label className="trip-form-label">Catatan</label>

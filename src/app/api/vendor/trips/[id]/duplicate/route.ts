@@ -42,6 +42,23 @@ export async function POST(
       );
     }
 
+    // Check if vehicle has an active ongoing/delayed trip
+    const activeTrip = await prisma.trip.findFirst({
+      where: {
+        vehicleId: trip.vehicleId,
+        status: { in: ["ONGOING", "DELAYED"] },
+      },
+    });
+
+    if (activeTrip) {
+      return NextResponse.json(
+        {
+          error: `Kendaraan ${trip.vehicle.licensePlate} sedang dalam perjalanan aktif (${activeTrip.origin} → ${activeTrip.destination}). Selesaikan trip tersebut terlebih dahulu.`,
+        },
+        { status: 400 }
+      );
+    }
+
     // Create duplicate with next day departure
     const newDepartureTime = new Date(trip.departureTime);
     newDepartureTime.setDate(newDepartureTime.getDate() + 1);
@@ -130,6 +147,7 @@ export async function POST(
           amenities: trip.amenities,
           bookingDeadline: newBookingDeadline,
           notes: trip.notes,
+          minBooking: trip.minBooking,
           vehicleId: trip.vehicleId,
           driverId: trip.driverId,
           status: "SCHEDULED",

@@ -35,7 +35,7 @@ export default function CreateTripDialog() {
     origin: "", destination: "", originDetail: "", destinationDetail: "",
     departureTime: "", arrivalTime: "", durationMinutes: 120,
     vehicleId: "", driverId: "", price: "",
-    bookingDeadline: "", notes: "",
+    bookingDeadline: "", notes: "", minBooking: "1",
   });
 
   const selectedVehicle = vehicles.find(v => v.id === form.vehicleId);
@@ -130,6 +130,7 @@ export default function CreateTripDialog() {
       price: parseFloat(form.price),
       bookingDeadline: form.bookingDeadline ? new Date(form.bookingDeadline).toISOString() : undefined,
       notes: form.notes || undefined,
+      minBooking: parseInt(form.minBooking) || 1,
     });
     resetForm();
   };
@@ -139,6 +140,7 @@ export default function CreateTripDialog() {
       origin: "", destination: "", originDetail: "", destinationDetail: "",
       departureTime: "", arrivalTime: "", durationMinutes: 120,
       vehicleId: "", driverId: "", price: "", bookingDeadline: "", notes: "",
+      minBooking: "1",
     });
     setOriginProvinceId("");
     setDestProvinceId("");
@@ -334,14 +336,17 @@ export default function CreateTripDialog() {
                 </div>
               )}
 
-              {/* ═══ SECTION: HARGA ═══ */}
-              <div className="trip-form-section-label">Harga</div>
+              {/* ═══ SECTION: HARGA & SYARAT ═══ */}
+              <div className="trip-form-section-label">Harga & Syarat</div>
               <div className="trip-form-row">
                 <div className="trip-form-group">
                   <label className="trip-form-label">Harga per Kursi (Rp) *</label>
                   <input className="trip-form-input" type="number" name="price" value={form.price} onChange={handleChange} placeholder="150000" min="0" required />
                 </div>
-                <div className="trip-form-group" />
+                <div className="trip-form-group">
+                  <label className="trip-form-label">Min. Keberangkatan (Kursi) *</label>
+                  <input className="trip-form-input" type="number" name="minBooking" value={form.minBooking} onChange={handleChange} min="1" required />
+                </div>
               </div>
 
               {/* Notes */}

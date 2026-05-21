@@ -134,6 +134,7 @@ export interface CreateTripPayload {
   amenities?: string[];
   bookingDeadline?: string;
   notes?: string;
+  minBooking?: number;
 }
 
 export interface UpdateTripPayload {
@@ -146,6 +147,7 @@ export interface UpdateTripPayload {
   notes?: string;
   status?: TripStatus;
   bookingDeadline?: string;
+  minBooking?: number;
 }
 
 export interface RescheduleTripPayload {

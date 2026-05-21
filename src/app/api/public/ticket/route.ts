@@ -48,13 +48,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Booking tidak ditemukan." }, { status: 404 });
     }
 
-    // Optional validation: check if phone matches (allowing partial or exact match)
-    if (phone) {
-      const dbPhone = booking.customerPhone.replace(/[\s\-\+]/g, "");
-      const searchPhone = phone.replace(/[\s\-\+]/g, "");
-      if (!dbPhone.includes(searchPhone) && !searchPhone.includes(dbPhone)) {
-        return NextResponse.json({ error: "Nomor HP tidak cocok dengan data booking." }, { status: 403 });
-      }
+    // Strict validation: check if phone matches (allowing partial or exact match)
+    if (!phone) {
+      return NextResponse.json({ error: "Nomor HP wajib diisi untuk verifikasi." }, { status: 400 });
+    }
+
+    const dbPhone = booking.customerPhone.replace(/[\s\-\+]/g, "");
+    const searchPhone = phone.replace(/[\s\-\+]/g, "");
+    if (!dbPhone.includes(searchPhone) && !searchPhone.includes(dbPhone)) {
+      return NextResponse.json({ error: "Nomor HP tidak cocok dengan data booking." }, { status: 403 });
     }
 
     // 1. Parse JSON notes

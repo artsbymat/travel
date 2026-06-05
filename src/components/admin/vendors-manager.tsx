@@ -3,7 +3,27 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useStore } from "@tanstack/react-form";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Pencil, Plus, RefreshCw, Trash2, Users, Bus, Wallet } from "lucide-react";
+import { 
+  Building2, 
+  Pencil, 
+  Plus, 
+  RefreshCw, 
+  Trash2, 
+  Users, 
+  Bus, 
+  Wallet, 
+  Percent, 
+  MapPin, 
+  Mail, 
+  Phone, 
+  FileText, 
+  CheckCircle2, 
+  AlertTriangle,
+  FileSpreadsheet,
+  Globe,
+  Settings,
+  Scale
+} from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -255,18 +275,18 @@ function ToggleField({
   return (
     <Field
       orientation="horizontal"
-      className="border-border/70 bg-background items-start rounded-3xl border px-4 py-3"
+      className="border border-slate-100 bg-slate-50/50 hover:bg-slate-50 items-center justify-between rounded-2xl px-4 py-3 transition-colors duration-200"
     >
+      <FieldContent className="space-y-0.5">
+        <FieldTitle className="text-slate-800 text-sm font-bold">{label}</FieldTitle>
+        <FieldDescription className="text-slate-400 text-xs font-medium max-w-sm">{description}</FieldDescription>
+      </FieldContent>
       <input
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
         type="checkbox"
-        className="border-border text-primary focus:ring-ring mt-1 size-4 rounded focus:ring-2"
+        className="border-slate-200 text-teal-600 focus:ring-teal-500/20 size-4.5 rounded cursor-pointer transition-all"
       />
-      <FieldContent>
-        <FieldTitle>{label}</FieldTitle>
-        <FieldDescription>{description}</FieldDescription>
-      </FieldContent>
     </Field>
   );
 }
@@ -306,22 +326,22 @@ function RegionCombobox<TItem extends { id: string; name: string }>({
       isItemEqualToValue={(item, selectedItem) => item.id === selectedItem.id}
       id={id}
     >
-      <ComboboxInput placeholder={placeholder} className="w-full" disabled={disabled} showClear>
+      <ComboboxInput placeholder={placeholder} className="w-full text-xs rounded-xl h-9.5 border-slate-200 focus:border-teal-500 focus:ring-teal-500/20" disabled={disabled} showClear>
         {isLoading ? (
           <div className="mr-7 flex items-center">
-            <Spinner className="text-muted-foreground" />
+            <Spinner className="text-teal-600 size-4 animate-spin" />
           </div>
         ) : null}
       </ComboboxInput>
-      <ComboboxContent className="w-full">
-        <ComboboxEmpty>{isLoading ? "Memuat data..." : emptyLabel}</ComboboxEmpty>
+      <ComboboxContent className="w-full max-h-60 overflow-y-auto">
+        <ComboboxEmpty className="text-slate-400 text-xs italic py-2">{isLoading ? "Memuat data..." : emptyLabel}</ComboboxEmpty>
         <ComboboxList>
           {(item) => (
-            <ComboboxItem key={item.id} value={item}>
+            <ComboboxItem key={item.id} value={item} className="data-highlighted:bg-teal-50 data-highlighted:text-teal-700">
               <Item size="xs" className="p-0">
                 <ItemContent>
-                  <ItemTitle>{item.name}</ItemTitle>
-                  {description ? <ItemDescription>{description(item)}</ItemDescription> : null}
+                  <ItemTitle className="font-semibold text-xs">{item.name}</ItemTitle>
+                  {description ? <ItemDescription className="text-[10px] text-slate-400">{description(item)}</ItemDescription> : null}
                 </ItemContent>
               </Item>
             </ComboboxItem>
@@ -566,159 +586,227 @@ export function VendorsManager() {
   const loadingError = vendorsQuery.error?.message || provincesQuery.error?.message;
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
-      <section id="manage" className="border-border/70 bg-card rounded-[2rem] border p-5 shadow-sm">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+    <div className="grid gap-8 xl:grid-cols-[minmax(0,1.25fr)_minmax(380px,0.75fr)]">
+      {/* LEFT SECTION: LIST OF VENDORS */}
+      <section id="manage" className="border border-slate-100 bg-white rounded-3xl p-6 shadow-sm">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-slate-50 pb-4">
           <div>
-            <h2 className="text-xl font-semibold">Daftar Vendor</h2>
-            <p className="text-muted-foreground text-sm">
-              Admin dapat menambah, mengubah, dan menghapus vendor travel.
+            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <Building2 className="text-teal-600 size-5" />
+              Daftar Vendor Mitra
+            </h2>
+            <p className="text-slate-400 text-xs font-semibold mt-1">
+              Pantau mitra travel aktif, ketersediaan armada, saldo wallet, dan parameter pajak.
             </p>
           </div>
           <Button
             type="button"
             variant="outline"
+            size="sm"
             onClick={() => vendorsQuery.refetch()}
             disabled={vendorsQuery.isFetching}
+            className="rounded-xl border-slate-200 font-bold text-slate-600 hover:bg-slate-50 text-xs h-9.5"
           >
-            <RefreshCw className={cn("size-4", vendorsQuery.isFetching && "animate-spin")} />
-            Muat Ulang
+            <RefreshCw className={cn("size-3.5 mr-1.5", vendorsQuery.isFetching && "animate-spin")} />
+            Refresh
           </Button>
         </div>
 
         {loading ? (
-          <div className="space-y-3">
-            <Skeleton className="h-24 w-full rounded-[1.5rem]" />
-            <Skeleton className="h-24 w-full rounded-[1.5rem]" />
-            <Skeleton className="h-24 w-full rounded-[1.5rem]" />
+          <div className="space-y-4">
+            <Skeleton className="h-28 w-full rounded-2xl" />
+            <Skeleton className="h-28 w-full rounded-2xl" />
+            <Skeleton className="h-28 w-full rounded-2xl" />
           </div>
         ) : loadingError ? (
-          <div className="border-destructive/20 bg-destructive/5 text-destructive rounded-3xl border px-4 py-3 text-sm">
+          <div className="border border-red-200 bg-red-50 text-red-700 rounded-2xl px-4 py-3 text-xs font-bold">
             {loadingError}
           </div>
         ) : vendors.length === 0 ? (
-          <div className="border-border bg-muted/30 rounded-[1.5rem] border border-dashed px-5 py-10 text-center">
-            <Building2 className="text-muted-foreground mx-auto mb-3 size-10" />
-            <p className="font-medium">Belum ada vendor terdaftar.</p>
-            <p className="text-muted-foreground text-sm">
-              Gunakan form di samping untuk menambahkan vendor pertama.
+          <div className="border border-dashed border-slate-200 bg-slate-50/50 rounded-2xl px-5 py-12 text-center">
+            <Building2 className="text-slate-400 mx-auto mb-3 size-12" />
+            <p className="font-bold text-slate-800">Belum Ada Vendor Mitra</p>
+            <p className="text-slate-400 text-xs mt-1">
+              Gunakan formulir di sebelah kanan untuk menambahkan mitra travel pertama Anda.
             </p>
           </div>
         ) : (
-          <ItemGroup>
+          <div className="space-y-4.5">
             {vendors.map((vendor) => (
-              <Item
+              <div
                 key={vendor.id}
-                variant={editingVendorId === vendor.id ? "muted" : "outline"}
-                className="border-border/70 rounded-[1.5rem] p-4"
+                className={cn(
+                  "border rounded-2xl p-5 transition-all duration-300 relative overflow-hidden group hover:shadow-md",
+                  editingVendorId === vendor.id 
+                    ? "border-teal-200 bg-teal-50/10" 
+                    : "border-slate-100 bg-white hover:border-slate-200"
+                )}
               >
-                <ItemHeader className="items-start">
-                  <div className="flex items-start gap-3">
-                    <ItemMedia
-                      variant="icon"
-                      className="bg-primary/10 text-primary mt-1 rounded-2xl p-2"
-                    >
-                      <Building2 className="size-4" />
-                    </ItemMedia>
-                    <ItemContent>
-                      <ItemTitle>{vendor.name}</ItemTitle>
-                      <ItemDescription>
-                        {vendor.city?.name ?? "Kota belum dipilih"} •{" "}
-                        {vendor.email ?? "Tanpa email"}
-                      </ItemDescription>
-                    </ItemContent>
+                <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+                  <div className="flex items-start gap-3.5">
+                    <div className="flex size-10 items-center justify-center rounded-xl bg-slate-50 border border-slate-100 text-slate-600 transition-colors group-hover:bg-teal-50 group-hover:text-teal-600">
+                      <Building2 className="size-4.5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-extrabold text-slate-800 transition-colors group-hover:text-teal-600">
+                        {vendor.name}
+                      </h4>
+                      <p className="text-slate-400 text-xs font-semibold flex items-center gap-1.5 mt-0.5">
+                        <MapPin size={12} className="text-slate-300" />
+                        {vendor.city?.name ?? "Lokasi belum diatur"}
+                        {vendor.email && (
+                          <>
+                            <span className="text-slate-200">•</span>
+                            <Mail size={12} className="text-slate-300" />
+                            {vendor.email}
+                          </>
+                        )}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-medium">
+
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      "rounded-full px-2.5 py-0.5 text-[9px] font-bold border uppercase tracking-wider",
+                      vendor.isActive
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                        : "bg-slate-50 text-slate-400 border-slate-100"
+                    )}>
                       {vendor.isActive ? "Aktif" : "Nonaktif"}
                     </span>
-                    {vendor.isHeld ? (
-                      <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
-                        Ditahan
+                    {vendor.isHeld && (
+                      <span className="rounded-full bg-amber-50 text-amber-700 border border-amber-100 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">
+                        Ditangguhkan
                       </span>
-                    ) : null}
-                  </div>
-                </ItemHeader>
-
-                <div className="text-muted-foreground grid w-full gap-3 text-sm md:grid-cols-4">
-                  <div className="bg-muted/40 rounded-2xl px-3 py-2">
-                    <div className="text-foreground mb-1 flex items-center gap-2 font-medium">
-                      <Wallet className="size-4" />
-                      Saldo Wallet
-                    </div>
-                    <div className="text-primary font-semibold">
-                      {formatCurrency(vendor.wallet?.balance ?? 0)}
-                    </div>
-                  </div>
-                  <div className="bg-muted/40 rounded-2xl px-3 py-2">
-                    <div className="text-foreground mb-1 flex items-center gap-2 font-medium">
-                      <Users className="size-4" />
-                      Owner/User
-                    </div>
-                    <div>{vendor._count?.users ?? 0}</div>
-                  </div>
-                  <div className="bg-muted/40 rounded-2xl px-3 py-2">
-                    <div className="text-foreground mb-1 flex items-center gap-2 font-medium">
-                      <Bus className="size-4" />
-                      Armada
-                    </div>
-                    <div>{vendor._count?.vehicles ?? 0}</div>
-                  </div>
-                  <div className="bg-muted/40 rounded-2xl px-3 py-2">
-                    <div className="text-foreground mb-1 font-medium">Biaya Platform</div>
-                    <div>{formatNumber(vendor.platformFeeRate)}</div>
+                    )}
                   </div>
                 </div>
 
-                <ItemActions className="ml-auto">
-                  <Button type="button" variant="outline" onClick={() => startEditVendor(vendor)}>
-                    <Pencil className="size-4" />
-                    Edit
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={() => requestDeleteVendor(vendor)}
-                    disabled={deleteVendorMutation.isPending}
-                  >
-                    <Trash2 className="size-4" />
-                    Hapus
-                  </Button>
-                </ItemActions>
-              </Item>
+                {/* Dashboard style metrics */}
+                <div className="grid gap-3 grid-cols-2 md:grid-cols-4 bg-slate-50/50 border border-slate-100/50 rounded-2xl p-3 text-xs">
+                  <div className="space-y-1">
+                    <div className="text-slate-400 font-bold flex items-center gap-1.5">
+                      <Wallet className="size-3.5 text-slate-400" />
+                      Saldo Wallet
+                    </div>
+                    <div className="text-teal-600 font-extrabold text-xs">
+                      {formatCurrency(vendor.wallet?.balance ?? 0)}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-slate-400 font-bold flex items-center gap-1.5">
+                      <Users className="size-3.5 text-slate-400" />
+                      Pengguna / Staff
+                    </div>
+                    <div className="text-slate-700 font-bold text-xs">
+                      {vendor._count?.users ?? 0} Akun
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-slate-400 font-bold flex items-center gap-1.5">
+                      <Bus className="size-3.5 text-slate-400" />
+                      Total Armada
+                    </div>
+                    <div className="text-slate-700 font-bold text-xs">
+                      {vendor._count?.vehicles ?? 0} Kendaraan
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-slate-400 font-bold flex items-center gap-1.5">
+                      <Percent className="size-3.5 text-slate-400" />
+                      Platform Fee
+                    </div>
+                    <div className="text-slate-700 font-bold text-xs">
+                      {formatNumber(vendor.platformFeeRate)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between border-t border-slate-50 pt-3">
+                  {/* Additional info badge */}
+                  <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                    <FileSpreadsheet size={12} className="text-slate-300" />
+                    SIUP: {vendor.siup || "-"}
+                  </span>
+                  
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => startEditVendor(vendor)}
+                      className="rounded-xl border-slate-200 font-bold text-slate-600 hover:bg-slate-50 text-xs h-8 px-3"
+                    >
+                      <Pencil className="size-3.5 mr-1" />
+                      Edit
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => requestDeleteVendor(vendor)}
+                      disabled={deleteVendorMutation.isPending}
+                      className="rounded-xl font-bold text-xs h-8 px-3"
+                    >
+                      <Trash2 className="size-3.5 mr-1" />
+                      Hapus
+                    </Button>
+                  </div>
+                </div>
+              </div>
             ))}
-          </ItemGroup>
+          </div>
         )}
       </section>
 
-      <section className="border-border/70 bg-card rounded-[2rem] border p-5 shadow-sm">
-        <div className="mb-5 flex items-start justify-between gap-3">
+      {/* RIGHT SECTION: FORM (CREATE / EDIT) */}
+      <section className="border border-slate-100 bg-white rounded-3xl p-6 shadow-sm h-fit">
+        <div className="mb-6 flex items-center justify-between gap-4 border-b border-slate-50 pb-4">
           <div>
-            <h2 className="text-xl font-semibold">
-              {editingVendorId ? "Edit Vendor" : "Tambah Vendor"}
+            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              {editingVendorId ? (
+                <>
+                  <Settings className="text-amber-500 size-5" />
+                  Edit Data Vendor
+                </>
+              ) : (
+                <>
+                  <Plus className="text-teal-600 size-5" />
+                  Tambah Vendor Baru
+                </>
+              )}
             </h2>
-            <p className="text-muted-foreground text-sm">
-              Form ini memakai TanStack Form untuk validasi dan submit state.
+            <p className="text-slate-400 text-xs font-semibold mt-1">
+              {editingVendorId
+                ? "Modifikasi pengaturan, detail legalitas, dan parameter komisi vendor."
+                : "Daftarkan armada travel baru ke dalam platform Anda."}
             </p>
           </div>
-          {editingVendorId ? (
-            <Button type="button" variant="ghost" onClick={resetVendorForm}>
-              <Plus className="size-4" />
+          {editingVendorId && (
+            <Button 
+              type="button" 
+              variant="ghost" 
+              size="xs"
+              onClick={resetVendorForm}
+              className="font-bold text-teal-600 hover:bg-teal-50 rounded-xl"
+            >
               Mode Baru
             </Button>
-          ) : null}
+          )}
         </div>
 
-        {submitError ? (
-          <div className="border-destructive/20 bg-destructive/5 text-destructive mb-4 rounded-3xl border px-4 py-3 text-sm">
+        {submitError && (
+          <div className="border border-red-200 bg-red-50 text-red-700 mb-4 rounded-xl px-4 py-3 text-xs font-bold flex items-center gap-2">
+            <AlertTriangle className="size-4 shrink-0" />
             {submitError}
           </div>
-        ) : null}
-        {submitSuccess ? (
-          <div className="border-primary/20 bg-primary/5 text-primary mb-4 rounded-3xl border px-4 py-3 text-sm">
+        )}
+        {submitSuccess && (
+          <div className="border border-emerald-200 bg-emerald-50 text-emerald-700 mb-4 rounded-xl px-4 py-3 text-xs font-bold flex items-center gap-2">
+            <CheckCircle2 className="size-4 shrink-0" />
             {submitSuccess}
           </div>
-        ) : null}
+        )}
 
         <form
           className="space-y-6"
@@ -728,9 +816,16 @@ export function VendorsManager() {
             void form.handleSubmit();
           }}
         >
-          <FieldSet>
+          <FieldSet className="space-y-5">
             <FieldGroup className="gap-5">
-              <div className="grid gap-4 md:grid-cols-2">
+              
+              {/* SECTION A: INFORMASI DASAR */}
+              <div className="space-y-4">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <Building2 size={13} className="text-slate-300" />
+                  Informasi Dasar
+                </h3>
+                
                 <form.Field
                   name="name"
                   validators={{
@@ -740,7 +835,7 @@ export function VendorsManager() {
                 >
                   {(field) => (
                     <Field>
-                      <FieldLabel htmlFor={field.name}>Nama Vendor</FieldLabel>
+                      <FieldLabel htmlFor={field.name} className="text-xs font-bold text-slate-700 mb-1">Nama Vendor</FieldLabel>
                       <FieldContent>
                         <Input
                           id={field.name}
@@ -754,8 +849,9 @@ export function VendorsManager() {
                             }
                           }}
                           placeholder="Sinar Jaya"
+                          className="border-slate-200 focus:border-teal-500 focus:ring-teal-500/20 text-xs rounded-xl h-9.5"
                         />
-                        <FieldError errors={toFieldErrors(field.state.meta.errors)} />
+                        <FieldError errors={toFieldErrors(field.state.meta.errors)} className="text-[10px] text-red-500 font-bold mt-1" />
                       </FieldContent>
                     </Field>
                   )}
@@ -769,7 +865,7 @@ export function VendorsManager() {
                 >
                   {(field) => (
                     <Field>
-                      <FieldLabel htmlFor={field.name}>Slug</FieldLabel>
+                      <FieldLabel htmlFor={field.name} className="text-xs font-bold text-slate-700 mb-1">Slug URL</FieldLabel>
                       <FieldContent>
                         <Input
                           id={field.name}
@@ -781,255 +877,281 @@ export function VendorsManager() {
                             field.handleChange(slugify(event.target.value));
                           }}
                           placeholder="sinar-jaya"
+                          className="border-slate-200 focus:border-teal-500 focus:ring-teal-500/20 text-xs rounded-xl h-9.5"
                         />
-                        <FieldDescription>Gunakan format URL-friendly dan unik.</FieldDescription>
-                        <FieldError errors={toFieldErrors(field.state.meta.errors)} />
-                      </FieldContent>
-                    </Field>
-                  )}
-                </form.Field>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <form.Field
-                  name="email"
-                  validators={{
-                    onChange: ({ value }) =>
-                      value && !/^\S+@\S+\.\S+$/.test(value)
-                        ? "Format email tidak valid."
-                        : undefined
-                  }}
-                >
-                  {(field) => (
-                    <Field>
-                      <FieldLabel htmlFor={field.name}>Email</FieldLabel>
-                      <FieldContent>
-                        <Input
-                          id={field.name}
-                          type="email"
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(event) => field.handleChange(event.target.value)}
-                          placeholder="vendor@travel.com"
-                        />
-                        <FieldError errors={toFieldErrors(field.state.meta.errors)} />
+                        <FieldDescription className="text-[10px] text-slate-400 mt-1">
+                          Format URL unik, otomatis tersinkronisasi dengan nama.
+                        </FieldDescription>
+                        <FieldError errors={toFieldErrors(field.state.meta.errors)} className="text-[10px] text-red-500 font-bold mt-1" />
                       </FieldContent>
                     </Field>
                   )}
                 </form.Field>
 
-                <form.Field name="phone">
+                <form.Field name="description">
                   {(field) => (
                     <Field>
-                      <FieldLabel htmlFor={field.name}>Nomor Telepon</FieldLabel>
+                      <FieldLabel htmlFor={field.name} className="text-xs font-bold text-slate-700 mb-1">Deskripsi Travel</FieldLabel>
                       <FieldContent>
-                        <Input
+                        <Textarea
                           id={field.name}
                           value={field.state.value}
                           onBlur={field.handleBlur}
                           onChange={(event) => field.handleChange(event.target.value)}
-                          placeholder="08123456789"
+                          placeholder="Deskripsi singkat mengenai layanan travel..."
+                          className="border-slate-200 focus:border-teal-500 focus:ring-teal-500/20 text-xs rounded-xl min-h-20"
                         />
-                        <FieldError errors={toFieldErrors(field.state.meta.errors)} />
                       </FieldContent>
                     </Field>
                   )}
                 </form.Field>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <form.Field name="provinceId">
-                  {(field) => (
-                    <Field>
-                      <FieldLabel>Provinsi</FieldLabel>
-                      <FieldContent>
-                        <RegionCombobox
-                          id="vendor-province"
-                          items={provinces}
-                          value={selectedProvince}
-                          onChange={(value) => {
-                            field.handleChange(value?.id ?? "");
-                            form.setFieldValue("cityId", "");
-                            setCitySearch("");
-                          }}
-                          onSearchChange={setProvinceSearch}
-                          placeholder="Cari provinsi"
-                          emptyLabel="Provinsi tidak ditemukan."
-                          description={(province) => province.code ?? "Tanpa kode"}
-                          isLoading={provincesQuery.isFetching}
-                        />
-                        <FieldDescription>
-                          Ketik nama provinsi lalu navigasi dengan keyboard.
-                        </FieldDescription>
-                      </FieldContent>
-                    </Field>
-                  )}
-                </form.Field>
+              <hr className="border-slate-100" />
 
-                <form.Field name="cityId">
+              {/* SECTION B: KONTAK & REGION */}
+              <div className="space-y-4">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <MapPin size={13} className="text-slate-300" />
+                  Kontak & Wilayah
+                </h3>
+
+                <div className="grid gap-4 grid-cols-2">
+                  <form.Field
+                    name="email"
+                    validators={{
+                      onChange: ({ value }) =>
+                        value && !/^\S+@\S+\.\S+$/.test(value)
+                          ? "Format email tidak valid."
+                          : undefined
+                    }}
+                  >
+                    {(field) => (
+                      <Field>
+                        <FieldLabel htmlFor={field.name} className="text-xs font-bold text-slate-700 mb-1">Email</FieldLabel>
+                        <FieldContent>
+                          <Input
+                            id={field.name}
+                            type="email"
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(event) => field.handleChange(event.target.value)}
+                            placeholder="vendor@travel.com"
+                            className="border-slate-200 focus:border-teal-500 focus:ring-teal-500/20 text-xs rounded-xl h-9.5"
+                          />
+                          <FieldError errors={toFieldErrors(field.state.meta.errors)} className="text-[10px] text-red-500 font-bold mt-1" />
+                        </FieldContent>
+                      </Field>
+                    )}
+                  </form.Field>
+
+                  <form.Field name="phone">
+                    {(field) => (
+                      <Field>
+                        <FieldLabel htmlFor={field.name} className="text-xs font-bold text-slate-700 mb-1">Telepon</FieldLabel>
+                        <FieldContent>
+                          <Input
+                            id={field.name}
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(event) => field.handleChange(event.target.value)}
+                            placeholder="08123456789"
+                            className="border-slate-200 focus:border-teal-500 focus:ring-teal-500/20 text-xs rounded-xl h-9.5"
+                          />
+                          <FieldError errors={toFieldErrors(field.state.meta.errors)} className="text-[10px] text-red-500 font-bold mt-1" />
+                        </FieldContent>
+                      </Field>
+                    )}
+                  </form.Field>
+                </div>
+
+                <div className="grid gap-4 grid-cols-2">
+                  <form.Field name="provinceId">
+                    {(field) => (
+                      <Field>
+                        <FieldLabel className="text-xs font-bold text-slate-700 mb-1">Provinsi</FieldLabel>
+                        <FieldContent>
+                          <RegionCombobox
+                            id="vendor-province"
+                            items={provinces}
+                            value={selectedProvince}
+                            onChange={(value) => {
+                              field.handleChange(value?.id ?? "");
+                              form.setFieldValue("cityId", "");
+                              setCitySearch("");
+                            }}
+                            onSearchChange={setProvinceSearch}
+                            placeholder="Cari provinsi"
+                            emptyLabel="Provinsi tidak ditemukan."
+                            description={(province) => province.code ?? "Tanpa kode"}
+                            isLoading={provincesQuery.isFetching}
+                          />
+                        </FieldContent>
+                      </Field>
+                    )}
+                  </form.Field>
+
+                  <form.Field name="cityId">
+                    {(field) => (
+                      <Field>
+                        <FieldLabel className="text-xs font-bold text-slate-700 mb-1">Kota / Kabupaten</FieldLabel>
+                        <FieldContent>
+                          <RegionCombobox
+                            id="vendor-city"
+                            items={cities}
+                            value={selectedCity}
+                            onChange={(value) => field.handleChange(value?.id ?? "")}
+                            onSearchChange={setCitySearch}
+                            placeholder="Cari kota"
+                            emptyLabel={
+                              provinceCitiesQuery.isError
+                                ? "Gagal memuat kota."
+                                : "Kota tidak ditemukan."
+                            }
+                            description={(city) => city.code ?? "Tanpa kode"}
+                            disabled={!selectedProvinceId}
+                            isLoading={provinceCitiesQuery.isFetching}
+                          />
+                        </FieldContent>
+                      </Field>
+                    )}
+                  </form.Field>
+                </div>
+
+                <form.Field name="address">
                   {(field) => (
                     <Field>
-                      <FieldLabel>Kota</FieldLabel>
+                      <FieldLabel htmlFor={field.name} className="text-xs font-bold text-slate-700 mb-1">Alamat Kantor</FieldLabel>
                       <FieldContent>
-                        <RegionCombobox
-                          id="vendor-city"
-                          items={cities}
-                          value={selectedCity}
-                          onChange={(value) => field.handleChange(value?.id ?? "")}
-                          onSearchChange={setCitySearch}
-                          placeholder="Cari kota"
-                          emptyLabel={
-                            provinceCitiesQuery.isError
-                              ? "Gagal memuat kota."
-                              : "Kota tidak ditemukan."
-                          }
-                          description={(city) => city.code ?? "Tanpa kode"}
-                          disabled={!selectedProvinceId}
-                          isLoading={provinceCitiesQuery.isFetching}
+                        <Textarea
+                          id={field.name}
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(event) => field.handleChange(event.target.value)}
+                          placeholder="Jalan, No. Gedung, RT/RW..."
+                          className="border-slate-200 focus:border-teal-500 focus:ring-teal-500/20 text-xs rounded-xl min-h-20"
                         />
-                        <FieldDescription>
-                          Pilih provinsi terlebih dulu agar daftar kota lebih relevan.
-                        </FieldDescription>
                       </FieldContent>
                     </Field>
                   )}
                 </form.Field>
               </div>
 
-              <form.Field name="address">
-                {(field) => (
-                  <Field>
-                    <FieldLabel htmlFor={field.name}>Alamat</FieldLabel>
-                    <FieldContent>
-                      <Textarea
-                        id={field.name}
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(event) => field.handleChange(event.target.value)}
-                        placeholder="Alamat kantor/vendor"
-                        className="min-h-24 rounded-3xl"
-                      />
-                    </FieldContent>
-                  </Field>
-                )}
-              </form.Field>
+              <hr className="border-slate-100" />
 
-              <form.Field name="description">
-                {(field) => (
-                  <Field>
-                    <FieldLabel htmlFor={field.name}>Deskripsi</FieldLabel>
-                    <FieldContent>
-                      <Textarea
-                        id={field.name}
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(event) => field.handleChange(event.target.value)}
-                        placeholder="Keterangan singkat vendor"
-                        className="min-h-24 rounded-3xl"
-                      />
-                    </FieldContent>
-                  </Field>
-                )}
-              </form.Field>
+              {/* SECTION C: LEGALITAS & FINANSIAL */}
+              <div className="space-y-4">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <Scale size={13} className="text-slate-300" />
+                  Legalitas & Komisi
+                </h3>
 
-              <div className="grid gap-4 md:grid-cols-2">
                 <form.Field name="legalName">
                   {(field) => (
                     <Field>
-                      <FieldLabel htmlFor={field.name}>Nama Legal</FieldLabel>
+                      <FieldLabel htmlFor={field.name} className="text-xs font-bold text-slate-700 mb-1">Nama Perusahaan Legal</FieldLabel>
                       <FieldContent>
                         <Input
                           id={field.name}
                           value={field.state.value}
                           onBlur={field.handleBlur}
                           onChange={(event) => field.handleChange(event.target.value)}
-                          placeholder="PT Contoh Transport"
+                          placeholder="PT Contoh Transport Solusindo"
+                          className="border-slate-200 focus:border-teal-500 focus:ring-teal-500/20 text-xs rounded-xl h-9.5"
                         />
                       </FieldContent>
                     </Field>
                   )}
                 </form.Field>
-                <form.Field name="npwp">
-                  {(field) => (
-                    <Field>
-                      <FieldLabel htmlFor={field.name}>NPWP</FieldLabel>
-                      <FieldContent>
-                        <Input
-                          id={field.name}
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(event) => field.handleChange(event.target.value)}
-                          placeholder="01.234.567.8-901.000"
-                        />
-                      </FieldContent>
-                    </Field>
-                  )}
-                </form.Field>
-              </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <form.Field name="siup">
-                  {(field) => (
-                    <Field>
-                      <FieldLabel htmlFor={field.name}>SIUP</FieldLabel>
-                      <FieldContent>
-                        <Input
-                          id={field.name}
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(event) => field.handleChange(event.target.value)}
-                          placeholder="Nomor SIUP"
-                        />
-                      </FieldContent>
-                    </Field>
-                  )}
-                </form.Field>
-                <form.Field
-                  name="platformFeeRate"
-                  validators={{
-                    onChange: ({ value }) =>
-                      value && Number.isNaN(Number(value))
-                        ? "Biaya platform harus berupa angka."
-                        : undefined
-                  }}
-                >
-                  {(field) => (
-                    <Field>
-                      <FieldLabel htmlFor={field.name}>Biaya Platform (%)</FieldLabel>
-                      <FieldContent>
-                        <Input
-                          id={field.name}
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(event) => field.handleChange(event.target.value)}
-                          placeholder="5"
-                        />
-                        <FieldError errors={toFieldErrors(field.state.meta.errors)} />
-                      </FieldContent>
-                    </Field>
-                  )}
-                </form.Field>
-              </div>
+                <div className="grid gap-4 grid-cols-2">
+                  <form.Field name="npwp">
+                    {(field) => (
+                      <Field>
+                        <FieldLabel htmlFor={field.name} className="text-xs font-bold text-slate-700 mb-1">NPWP Perusahaan</FieldLabel>
+                        <FieldContent>
+                          <Input
+                            id={field.name}
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(event) => field.handleChange(event.target.value)}
+                            placeholder="01.234.567.8-901.000"
+                            className="border-slate-200 focus:border-teal-500 focus:ring-teal-500/20 text-xs rounded-xl h-9.5"
+                          />
+                        </FieldContent>
+                      </Field>
+                    )}
+                  </form.Field>
 
-              <div className="grid gap-3">
-                <form.Field name="taxEnabled">
-                  {(field) => (
-                    <ToggleField
-                      label="Pajak Aktif"
-                      description="Aktifkan bila vendor dikenakan pajak pada transaksi."
-                      checked={field.state.value}
-                      onChange={field.handleChange}
-                    />
-                  )}
-                </form.Field>
+                  <form.Field name="siup">
+                    {(field) => (
+                      <Field>
+                        <FieldLabel htmlFor={field.name} className="text-xs font-bold text-slate-700 mb-1">Nomor SIUP</FieldLabel>
+                        <FieldContent>
+                          <Input
+                            id={field.name}
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(event) => field.handleChange(event.target.value)}
+                            placeholder="SIUP-XXXX-XXXX"
+                            className="border-slate-200 focus:border-teal-500 focus:ring-teal-500/20 text-xs rounded-xl h-9.5"
+                          />
+                        </FieldContent>
+                      </Field>
+                    )}
+                  </form.Field>
+                </div>
+
+                <div className="grid gap-4 grid-cols-2">
+                  <form.Field
+                    name="platformFeeRate"
+                    validators={{
+                      onChange: ({ value }) =>
+                        value && Number.isNaN(Number(value))
+                          ? "Biaya platform harus berupa angka."
+                          : undefined
+                    }}
+                  >
+                    {(field) => (
+                      <Field>
+                        <FieldLabel htmlFor={field.name} className="text-xs font-bold text-slate-700 mb-1">Biaya Komisi Platform (%)</FieldLabel>
+                        <FieldContent>
+                          <Input
+                            id={field.name}
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(event) => field.handleChange(event.target.value)}
+                            placeholder="5"
+                            className="border-slate-200 focus:border-teal-500 focus:ring-teal-500/20 text-xs rounded-xl h-9.5"
+                          />
+                          <FieldError errors={toFieldErrors(field.state.meta.errors)} className="text-[10px] text-red-500 font-bold mt-1" />
+                        </FieldContent>
+                      </Field>
+                    )}
+                  </form.Field>
+
+                  <div className="flex flex-col justify-end">
+                    <form.Field name="taxEnabled">
+                      {(field) => (
+                        <ToggleField
+                          label="Pajak Aktif"
+                          description="Kenakan pajak pada setiap tiket."
+                          checked={field.state.value}
+                          onChange={field.handleChange}
+                        />
+                      )}
+                    </form.Field>
+                  </div>
+                </div>
+
                 <form.Subscribe selector={(state) => state.values.taxEnabled}>
                   {(taxEnabled) =>
                     taxEnabled ? (
-                      <div className="grid gap-4 md:grid-cols-2">
+                      <div className="grid gap-4 grid-cols-2 bg-slate-50 p-4.5 rounded-2xl border border-slate-100 animate-in fade-in duration-300">
                         <form.Field name="taxName">
                           {(field) => (
                             <Field>
-                              <FieldLabel htmlFor={field.name}>Nama Pajak</FieldLabel>
+                              <FieldLabel htmlFor={field.name} className="text-xs font-bold text-slate-700 mb-1">Nama Pajak</FieldLabel>
                               <FieldContent>
                                 <Input
                                   id={field.name}
@@ -1037,11 +1159,13 @@ export function VendorsManager() {
                                   onBlur={field.handleBlur}
                                   onChange={(event) => field.handleChange(event.target.value)}
                                   placeholder="PPN"
+                                  className="border-slate-200 bg-white focus:border-teal-500 focus:ring-teal-500/20 text-xs rounded-xl h-9.5"
                                 />
                               </FieldContent>
                             </Field>
                           )}
                         </form.Field>
+                        
                         <form.Field
                           name="taxRate"
                           validators={{
@@ -1053,7 +1177,7 @@ export function VendorsManager() {
                         >
                           {(field) => (
                             <Field>
-                              <FieldLabel htmlFor={field.name}>Tarif Pajak (%)</FieldLabel>
+                              <FieldLabel htmlFor={field.name} className="text-xs font-bold text-slate-700 mb-1">Tarif Pajak (%)</FieldLabel>
                               <FieldContent>
                                 <Input
                                   id={field.name}
@@ -1061,8 +1185,9 @@ export function VendorsManager() {
                                   onBlur={field.handleBlur}
                                   onChange={(event) => field.handleChange(event.target.value)}
                                   placeholder="11"
+                                  className="border-slate-200 bg-white focus:border-teal-500 focus:ring-teal-500/20 text-xs rounded-xl h-9.5"
                                 />
-                                <FieldError errors={toFieldErrors(field.state.meta.errors)} />
+                                <FieldError errors={toFieldErrors(field.state.meta.errors)} className="text-[10px] text-red-500 font-bold mt-1" />
                               </FieldContent>
                             </Field>
                           )}
@@ -1071,51 +1196,78 @@ export function VendorsManager() {
                     ) : null
                   }
                 </form.Subscribe>
-                <form.Field name="acceptCash">
-                  {(field) => (
-                    <ToggleField
-                      label="Terima Pembayaran Tunai"
-                      description="Nonaktifkan bila vendor hanya menerima pembayaran non-tunai."
-                      checked={field.state.value}
-                      onChange={field.handleChange}
-                    />
-                  )}
-                </form.Field>
-                <form.Field name="isActive">
-                  {(field) => (
-                    <ToggleField
-                      label="Vendor Aktif"
-                      description="Vendor nonaktif tidak bisa dipakai pada operasional normal."
-                      checked={field.state.value}
-                      onChange={field.handleChange}
-                    />
-                  )}
-                </form.Field>
-                <form.Field name="isHeld">
-                  {(field) => (
-                    <ToggleField
-                      label="Tahan Vendor"
-                      description="Gunakan status ini bila vendor sedang dibekukan sementara."
-                      checked={field.state.value}
-                      onChange={field.handleChange}
-                    />
-                  )}
-                </form.Field>
+              </div>
+
+              <hr className="border-slate-100" />
+
+              {/* SECTION D: STATUS & FITUR */}
+              <div className="space-y-4">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <Settings size={13} className="text-slate-300" />
+                  Status & Fitur Sistem
+                </h3>
+                
+                <div className="space-y-3">
+                  <form.Field name="acceptCash">
+                    {(field) => (
+                      <ToggleField
+                        label="Terima Pembayaran Tunai (Cash)"
+                        description="Vendor/Driver diperbolehkan memegang kas tiket fisik."
+                        checked={field.state.value}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.Field>
+
+                  <form.Field name="isActive">
+                    {(field) => (
+                      <ToggleField
+                        label="Vendor Berstatus Aktif"
+                        description="Bila nonaktif, rute/tiket vendor tidak akan muncul di publik."
+                        checked={field.state.value}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.Field>
+
+                  <form.Field name="isHeld">
+                    {(field) => (
+                      <ToggleField
+                        label="Bekukan Sementara (Hold Wallet)"
+                        description="Batasi pencairan dana penarikan sementara waktu."
+                        checked={field.state.value}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.Field>
+                </div>
               </div>
             </FieldGroup>
           </FieldSet>
 
-          <div className="flex flex-wrap justify-end gap-3">
-            <Button type="button" variant="outline" onClick={resetVendorForm}>
+          <div className="flex items-center justify-end gap-3 border-t border-slate-50 pt-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm"
+              onClick={resetVendorForm}
+              className="rounded-xl border-slate-200 font-bold text-slate-600 hover:bg-slate-50 h-9.5 text-xs px-4"
+            >
               Reset
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="rounded-xl bg-teal-600 hover:bg-teal-700 font-bold text-white h-9.5 text-xs px-4 flex items-center gap-1.5"
+            >
+              {isSubmitting && <Spinner className="size-3.5 animate-spin text-white" />}
               {editingVendorId ? "Simpan Perubahan" : "Tambah Vendor"}
             </Button>
           </div>
         </form>
       </section>
 
+      {/* DELETE DIALOG */}
       <AlertDialog
         open={Boolean(vendorToDelete)}
         onOpenChange={(open) => {
@@ -1124,20 +1276,20 @@ export function VendorsManager() {
           }
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-3xl max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogMedia>
-              <Trash2 />
+            <AlertDialogMedia className="bg-red-50 text-red-500 rounded-2xl p-2.5 w-fit mx-auto mb-2">
+              <Trash2 className="size-5" />
             </AlertDialogMedia>
-            <AlertDialogTitle>Hapus vendor?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-center font-extrabold text-slate-800">Hapus Vendor?</AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-slate-500 text-xs">
               {vendorToDelete
-                ? `Vendor ${vendorToDelete.name} akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.`
-                : "Data vendor akan dihapus permanen."}
+                ? `Akun vendor "${vendorToDelete.name}" akan dihapus permanen dari sistem. Tindakan ini tidak dapat diurungkan.`
+                : "Data vendor akan dihapus secara permanen."}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteVendorMutation.isPending}>Batal</AlertDialogCancel>
+          <AlertDialogFooter className="sm:justify-center gap-2 mt-4">
+            <AlertDialogCancel disabled={deleteVendorMutation.isPending} className="rounded-xl border-slate-200 text-slate-500 font-bold text-xs h-9.5">Batal</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               onClick={(event) => {
@@ -1145,6 +1297,7 @@ export function VendorsManager() {
                 void confirmDeleteVendor();
               }}
               disabled={deleteVendorMutation.isPending}
+              className="rounded-xl font-bold text-xs h-9.5 bg-red-600 hover:bg-red-700"
             >
               Hapus Vendor
             </AlertDialogAction>

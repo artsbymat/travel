@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { createDuitkuInvoice } from "@/lib/duitku";
 
 export async function POST(req: NextRequest) {
   try {
@@ -145,7 +147,7 @@ export async function POST(req: NextRequest) {
       await tx.paymentTransaction.create({
         data: {
           bookingId: booking.id,
-          provider: "midtrans",
+          provider: "duitku",
           externalId,
           grossAmount: totalAmount,
           status: "PENDING",
@@ -162,10 +164,75 @@ export async function POST(req: NextRequest) {
         }
       });
 
-      return booking;
+      return { booking, trip, totalAmount, mappedMethod };
     });
 
-    return NextResponse.json({ success: true, booking: result });
+    let paymentUrl = null;
+
+    // Call Duitku API to generate payment links for all cashless transactions
+    if (result.mappedMethod !== "CASH") {
+      const parsedAmount = parseFloat(result.totalAmount.toString());
+      const itemDetails = selectedSeats.map((seat: string) => ({
+        name: `Tiket Kursi ${seat} (${result.trip.origin} -> ${result.trip.destination})`,
+        price: parseFloat(result.trip.price.toString()),
+        quantity: 1
+      }));
+
+      // Add vendor tax if exists
+      const parsedTax = parseFloat(result.booking.taxAmount?.toString() || "0");
+      if (parsedTax > 0) {
+        itemDetails.push({
+          name: `${result.trip.vehicle.vendor.taxName || "Pajak"} (${result.trip.vehicle.vendor.taxRate}%)`,
+          price: parsedTax,
+          quantity: 1
+        });
+      }
+
+      // Add platform service fee if exists
+      const parsedPlatformFee = parseFloat(result.booking.platformFeeAmount?.toString() || "0");
+      if (parsedPlatformFee > 0) {
+        itemDetails.push({
+          name: "Biaya Layanan Jaringan",
+          price: parsedPlatformFee,
+          quantity: 1
+        });
+      }
+
+      const requestDetails = {
+        merchantOrderId: result.booking.bookingCode, // String bookingCode
+        paymentAmount: parsedAmount,
+        productDetails: `Perjalanan ${result.trip.origin} ke ${result.trip.destination} (${result.booking.bookingCode})`,
+        customerName: contact.name,
+        customerEmail: contact.email || "customer@travelku.com",
+        customerPhone: contact.phone,
+        itemDetails
+      };
+
+      const dRes = await createDuitkuInvoice(requestDetails);
+
+      if (dRes.success && dRes.paymentUrl) {
+        paymentUrl = dRes.paymentUrl;
+
+        // Update transaction reference with response reference from Duitku
+        await prisma.paymentTransaction.updateMany({
+          where: { bookingId: result.booking.id, status: "PENDING" },
+          data: {
+            externalId: dRes.reference || result.booking.bookingCode,
+            rawPayload: dRes as any
+          }
+        });
+      } else {
+        console.error("[DUITKU] Request payment error:", dRes.statusMessage);
+        return NextResponse.json({
+          success: true,
+          booking: result.booking,
+          paymentUrl: null,
+          warning: "Gagal menghubungkan ke Duitku. Pembayaran dapat diselesaikan nanti. " + dRes.statusMessage
+        });
+      }
+    }
+
+    return NextResponse.json({ success: true, booking: result.booking, paymentUrl });
   } catch (error: any) {
     console.error("Checkout booking transaction error:", error);
     return NextResponse.json({ error: error.message || "Gagal membuat pemesanan." }, { status: 500 });

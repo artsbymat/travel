@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { Prisma } from "@prisma/client";
 
 export async function POST(
   req: NextRequest,
@@ -25,7 +25,7 @@ export async function POST(
   try {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { trip: true },
+      include: { trip: { include: { vehicle: true } } },
     });
 
     if (!booking) {
@@ -59,6 +59,93 @@ export async function POST(
           paidAt: new Date(),
         },
       });
+
+      const vendorId = booking.trip.vehicle.vendorId;
+      if (vendorId) {
+        let wallet = await tx.vendorWallet.findUnique({
+          where: { vendorId }
+        });
+
+        if (!wallet) {
+          wallet = await tx.vendorWallet.create({
+            data: {
+              vendorId,
+              balance: new Prisma.Decimal(0),
+              pendingIn: new Prisma.Decimal(0),
+              debt: new Prisma.Decimal(0),
+              totalEarned: new Prisma.Decimal(0)
+            }
+          });
+        }
+
+        const platformFee = booking.platformFeeAmount || new Prisma.Decimal(0);
+        const vendorShare = booking.vendorAmount || new Prisma.Decimal(0);
+
+        // Update wallet debt & totalEarned
+        await tx.vendorWallet.update({
+          where: { id: wallet.id },
+          data: {
+            debt: wallet.debt.plus(platformFee),
+            totalEarned: wallet.totalEarned.plus(vendorShare)
+          }
+        });
+
+        // Create Wallet Transaction
+        await tx.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            type: "CASH_INCOME",
+            amount: platformFee,
+            balanceAfter: wallet.balance,
+            referenceId: booking.id,
+            referenceType: "Booking",
+            description: `Komisi platform untuk booking tunai ${booking.bookingCode} disetujui oleh Owner/Staff, dicatat sebagai hutang vendor.`
+          }
+        });
+
+        // Double-Entry Ledger Bookkeeping Entries
+        // 1. Debit VENDOR_CASH
+        await tx.ledgerEntry.create({
+          data: {
+            transactionId: `TX-PAY-${booking.bookingCode}`,
+            account: "VENDOR_CASH",
+            side: "DEBIT",
+            amount: new Prisma.Decimal(booking.totalAmount),
+            vendorId: vendorId,
+            referenceId: booking.id,
+            referenceType: "Booking",
+            description: `Debit Kas Vendor: Penerimaan pembayaran tunai ${booking.bookingCode} disetujui oleh Owner/Staff.`
+          }
+        });
+
+        // 2. Credit VENDOR_DEBT
+        await tx.ledgerEntry.create({
+          data: {
+            transactionId: `TX-PAY-${booking.bookingCode}`,
+            account: "VENDOR_DEBT",
+            side: "CREDIT",
+            amount: platformFee,
+            vendorId: vendorId,
+            referenceId: booking.id,
+            referenceType: "Booking",
+            description: `Kredit Hutang Vendor: Komisi platform atas booking tunai ${booking.bookingCode}`
+          }
+        });
+
+        // 3. Credit PLATFORM_REVENUE
+        await tx.ledgerEntry.create({
+          data: {
+            transactionId: `TX-PAY-${booking.bookingCode}`,
+            account: "PLATFORM_REVENUE",
+            side: "CREDIT",
+            amount: platformFee,
+            vendorId: vendorId,
+            referenceId: booking.id,
+            referenceType: "Booking",
+            description: `Kredit Pendapatan Platform: Komisi platform atas booking tunai ${booking.bookingCode}`
+          }
+        });
+      }
 
       // Log cash approval inside trip activities for audit trailing
       await tx.tripActivity.create({

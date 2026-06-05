@@ -23,13 +23,13 @@ const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "",
+      url: "/admin",
       icon: <LayoutDashboard />,
       isActive: true,
       items: [
         {
-          title: "Pamasukan",
-          url: "#income"
+          title: "Ringkasan",
+          url: "/admin"
         }
       ]
     },
@@ -51,12 +51,12 @@ const data = {
     },
     {
       title: "Laporan",
-      url: "#",
+      url: "/admin/reports",
       icon: <ClipboardList />,
       items: [
         {
           title: "Laporan Keuangan",
-          url: "#"
+          url: "/admin/reports"
         }
       ]
     }

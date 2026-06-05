@@ -233,8 +233,14 @@ export default function DetailTrip() {
         return current.filter((seatId) => seatId !== seat.id);
       }
 
+      // UX Improvement: If limit is reached, support "auto-swapping" by replacing the oldest selection (FIFO)
+      // This allows users to move their group's selection easily by just clicking new seats.
       if (current.length >= passengerCount) {
-        return current;
+        if (passengerCount === 1) {
+          return [seat.id];
+        }
+        // Remove the first selected seat and add the new one at the end
+        return [...current.slice(1), seat.id];
       }
 
       return [...current, seat.id];

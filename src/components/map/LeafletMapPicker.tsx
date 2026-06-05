@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -14,7 +15,7 @@ const defaultIcon = L.icon({
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
-  shadowSize: [41, 41],
+  shadowSize: [41, 41]
 });
 
 L.Marker.prototype.options.icon = defaultIcon;
@@ -46,7 +47,9 @@ async function reverseGeocode(lat: number, lng: number): Promise<string> {
 }
 
 // Helper: forward geocode via Nominatim
-async function forwardGeocode(query: string): Promise<{ lat: number; lng: number; display_name: string }[]> {
+async function forwardGeocode(
+  query: string
+): Promise<{ lat: number; lng: number; display_name: string }[]> {
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&countrycodes=id`,
@@ -56,7 +59,7 @@ async function forwardGeocode(query: string): Promise<{ lat: number; lng: number
     return data.map((item: any) => ({
       lat: parseFloat(item.lat),
       lng: parseFloat(item.lon),
-      display_name: item.display_name,
+      display_name: item.display_name
     }));
   } catch {
     return [];
@@ -67,7 +70,7 @@ function MapClickHandler({ onMapClick }: { onMapClick: (latlng: LatLng) => void 
   useMapEvents({
     click(e) {
       onMapClick(e.latlng);
-    },
+    }
   });
   return null;
 }
@@ -86,7 +89,7 @@ export default function LeafletMapPicker({
   value,
   onChange,
   placeholder = "Cari lokasi atau klik di peta...",
-  className = "",
+  className = ""
 }: LeafletMapPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [markerPos, setMarkerPos] = useState<LatLng | null>(
@@ -94,23 +97,28 @@ export default function LeafletMapPicker({
   );
   const [address, setAddress] = useState(value?.address || "");
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<{ lat: number; lng: number; display_name: string }[]>([]);
+  const [searchResults, setSearchResults] = useState<
+    { lat: number; lng: number; display_name: string }[]
+  >([]);
   const [searching, setSearching] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const [locating, setLocating] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Default center: Indonesia center
-  const defaultCenter: LatLng = { lat: 0.5070, lng: 101.4478 };
+  const defaultCenter: LatLng = { lat: 0.507, lng: 101.4478 };
 
-  const handleMapClick = useCallback(async (latlng: LatLng) => {
-    setMarkerPos(latlng);
-    setGeocoding(true);
-    const addr = await reverseGeocode(latlng.lat, latlng.lng);
-    setAddress(addr);
-    setGeocoding(false);
-    onChange({ lat: latlng.lat, lng: latlng.lng, address: addr });
-  }, [onChange]);
+  const handleMapClick = useCallback(
+    async (latlng: LatLng) => {
+      setMarkerPos(latlng);
+      setGeocoding(true);
+      const addr = await reverseGeocode(latlng.lat, latlng.lng);
+      setAddress(addr);
+      setGeocoding(false);
+      onChange({ lat: latlng.lat, lng: latlng.lng, address: addr });
+    },
+    [onChange]
+  );
 
   const handleGetCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -123,7 +131,7 @@ export default function LeafletMapPicker({
       async (position) => {
         const latlng = {
           lat: position.coords.latitude,
-          lng: position.coords.longitude,
+          lng: position.coords.longitude
         };
         setMarkerPos(latlng);
         setGeocoding(true);
@@ -176,10 +184,12 @@ export default function LeafletMapPicker({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-left transition-all hover:border-teal-400 hover:bg-teal-50/30 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+        className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-left transition-all hover:border-teal-400 hover:bg-teal-50/30 focus:ring-2 focus:ring-teal-500/20 focus:outline-none"
       >
         <MapPin className="h-5 w-5 shrink-0 text-teal-600" />
-        <span className={`flex-1 truncate text-sm ${address ? "font-medium text-gray-800" : "text-gray-400"}`}>
+        <span
+          className={`flex-1 truncate text-sm ${address ? "font-medium text-gray-800" : "text-gray-400"}`}
+        >
           {address || placeholder}
         </span>
         {geocoding && <Loader2 className="h-4 w-4 animate-spin text-teal-600" />}
@@ -187,44 +197,46 @@ export default function LeafletMapPicker({
 
       {/* Map Modal */}
       {isOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="animate-in fade-in zoom-in relative w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl duration-200">
             {/* Header */}
             <div className="flex items-center justify-between border-b px-5 py-4">
               <div>
                 <h3 className="text-lg font-bold text-gray-900">Pilih Lokasi di Peta</h3>
-                <p className="text-xs text-gray-500 mt-0.5">Klik pada peta atau cari alamat di kotak pencarian.</p>
+                <p className="mt-0.5 text-xs text-gray-500">
+                  Klik pada peta atau cari alamat di kotak pencarian.
+                </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {/* Search Bar */}
-            <div className="relative px-5 py-3 border-b bg-gray-50 flex gap-2 items-center">
+            <div className="relative flex items-center gap-2 border-b bg-gray-50 px-5 py-3">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => handleSearchInput(e.target.value)}
                   placeholder="Cari alamat, jalan, atau lokasi..."
-                  className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-10 text-sm text-gray-800 placeholder-gray-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                  className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pr-10 pl-10 text-sm text-gray-800 placeholder-gray-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 focus:outline-none"
                 />
                 {searching && (
-                  <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-teal-600" />
+                  <Loader2 className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin text-teal-600" />
                 )}
               </div>
-              
+
               <button
                 type="button"
                 onClick={handleGetCurrentLocation}
                 disabled={locating}
-                className="shrink-0 flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-bold text-gray-700 hover:border-teal-500 hover:text-teal-600 disabled:opacity-50 transition-colors shadow-sm"
+                className="flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-bold text-gray-700 shadow-sm transition-colors hover:border-teal-500 hover:text-teal-600 disabled:opacity-50"
               >
                 {locating ? (
                   <Loader2 className="h-4 w-4 animate-spin text-teal-600" />
@@ -236,15 +248,15 @@ export default function LeafletMapPicker({
 
               {/* Search Results Dropdown */}
               {searchResults.length > 0 && (
-                <div className="absolute left-5 right-5 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg">
+                <div className="absolute top-full right-5 left-5 z-10 mt-1 max-h-48 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg">
                   {searchResults.map((result, idx) => (
                     <button
                       key={idx}
                       type="button"
                       onClick={() => handleSelectResult(result)}
-                      className="flex w-full items-start gap-2.5 px-4 py-3 text-left text-sm text-gray-700 hover:bg-teal-50 transition-colors border-b border-gray-50 last:border-b-0"
+                      className="flex w-full items-start gap-2.5 border-b border-gray-50 px-4 py-3 text-left text-sm text-gray-700 transition-colors last:border-b-0 hover:bg-teal-50"
                     >
-                      <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-teal-600" />
+                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" />
                       <span className="line-clamp-2">{result.display_name}</span>
                     </button>
                   ))}
@@ -255,9 +267,13 @@ export default function LeafletMapPicker({
             {/* Map */}
             <div className="h-[380px] w-full">
               <MapContainer
-                center={markerPos ? [markerPos.lat, markerPos.lng] : [defaultCenter.lat, defaultCenter.lng]}
+                center={
+                  markerPos
+                    ? [markerPos.lat, markerPos.lng]
+                    : [defaultCenter.lat, defaultCenter.lng]
+                }
                 zoom={markerPos ? 16 : 6}
-                className="h-full w-full z-0"
+                className="z-0 h-full w-full"
                 scrollWheelZoom
               >
                 <TileLayer
@@ -271,25 +287,31 @@ export default function LeafletMapPicker({
             </div>
 
             {/* Footer: Selected Address */}
-            <div className="border-t px-5 py-4 flex items-center justify-between gap-4">
-              <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-4 border-t px-5 py-4">
+              <div className="min-w-0 flex-1">
                 {address ? (
                   <div className="flex items-start gap-2">
-                    <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-teal-600" />
+                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" />
                     <div>
-                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Lokasi Terpilih</span>
-                      <p className="text-sm font-medium text-gray-800 mt-0.5 line-clamp-2">{address}</p>
+                      <span className="text-xs font-bold tracking-wider text-gray-500 uppercase">
+                        Lokasi Terpilih
+                      </span>
+                      <p className="mt-0.5 line-clamp-2 text-sm font-medium text-gray-800">
+                        {address}
+                      </p>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-400 italic">Belum ada lokasi dipilih. Klik di peta atau cari.</p>
+                  <p className="text-sm text-gray-400 italic">
+                    Belum ada lokasi dipilih. Klik di peta atau cari.
+                  </p>
                 )}
               </div>
               <button
                 type="button"
                 disabled={!address}
                 onClick={() => setIsOpen(false)}
-                className="shrink-0 rounded-xl bg-teal-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="shrink-0 rounded-xl bg-teal-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Pilih
               </button>

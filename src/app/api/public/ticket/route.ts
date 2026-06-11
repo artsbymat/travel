@@ -1,17 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
+
+type TicketPassenger = {
+  fullName: string;
+  phone: string;
+  identityNumber?: string;
+  seatNo?: string;
+};
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const code = searchParams.get("code")?.trim();
-    const phone = searchParams.get("phone")?.trim();
 
     if (!code) {
       return NextResponse.json({ error: "Kode booking wajib diisi." }, { status: 400 });
     }
 
-    // Lookup booking by unique bookingCode (optionally filter/validate phone if provided)
+    // Lookup booking by unique bookingCode.
     const booking = await prisma.booking.findUnique({
       where: { bookingCode: code },
       include: {
@@ -48,22 +55,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Booking tidak ditemukan." }, { status: 404 });
     }
 
-    // Strict validation: check if phone matches (allowing partial or exact match)
-    if (!phone) {
-      return NextResponse.json({ error: "Nomor HP wajib diisi untuk verifikasi." }, { status: 400 });
-    }
-
-    const dbPhone = booking.customerPhone.replace(/[\s\-\+]/g, "");
-    const searchPhone = phone.replace(/[\s\-\+]/g, "");
-    if (!dbPhone.includes(searchPhone) && !searchPhone.includes(dbPhone)) {
-      return NextResponse.json({ error: "Nomor HP tidak cocok dengan data booking." }, { status: 403 });
-    }
-
     // 1. Parse JSON notes
     let pickup = booking.trip.originDetail || `Pool ${booking.trip.origin}`;
     let dropoff = booking.trip.destinationDetail || `Pool ${booking.trip.destination}`;
     let customerNotes = "";
-    let passengers: any[] = [];
+    let passengers: TicketPassenger[] = [];
 
     if (booking.notes) {
       try {
@@ -72,7 +68,7 @@ export async function GET(req: NextRequest) {
         dropoff = parsed.dropoffAddress || dropoff;
         customerNotes = parsed.customerNotes || "";
         passengers = parsed.passengers || [];
-      } catch (err) {
+      } catch {
         // Fallback if notes is plain text
         customerNotes = booking.notes;
       }
@@ -97,7 +93,7 @@ export async function GET(req: NextRequest) {
         if (parsed.cancelledBy === "VENDOR" || parsed.cancelReason?.toLowerCase().includes("armada") || parsed.cancelReason?.toLowerCase().includes("dibatalkan otomatis")) {
           isVendorCancelledByNotes = true;
         }
-      } catch (e) {
+      } catch {
         if (booking.notes.includes("Armada") || booking.notes.includes("dibatalkan otomatis") || booking.notes.includes("VENDOR")) {
           isVendorCancelledByNotes = true;
         }
@@ -139,7 +135,6 @@ export async function GET(req: NextRequest) {
 
     const policies = booking.trip.vehicle.vendor.refundPolicies;
     let activeRefundPercentage = 0;
-    let selectedPolicyId = null;
 
     if (isVendorCancelledAwaitingRefund) {
       activeRefundPercentage = 100;
@@ -151,7 +146,6 @@ export async function GET(req: NextRequest) {
 
       if (matchingPolicy) {
         activeRefundPercentage = Number(matchingPolicy.refundPercentage);
-        selectedPolicyId = matchingPolicy.id;
       }
     }
 
@@ -256,13 +250,16 @@ export async function GET(req: NextRequest) {
         }))
       },
       review: existingReview
-        ? (existingReview.newData as any)
+        ? (existingReview.newData as Prisma.JsonValue)
         : null
     };
 
     return NextResponse.json(responseData);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error looking up ticket:", error);
-    return NextResponse.json({ error: error.message || "Gagal melacak tiket." }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Gagal melacak tiket." },
+      { status: 500 }
+    );
   }
 }

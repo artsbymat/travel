@@ -3,6 +3,7 @@
 
 import { type FormEvent, useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import QRCode from "react-qr-code";
 import {
   ArrowRight,
   CalendarDays,
@@ -80,7 +81,6 @@ function SearchTicketContent() {
 
   // Search parameter inputs
   const [bookingCodeInput, setBookingCodeInput] = useState("");
-  const [phoneInput, setPhoneInput] = useState("");
 
   // DB States
   const [booking, setBooking] = useState<any>(null);
@@ -113,25 +113,20 @@ function SearchTicketContent() {
   // 1. Check if URL contains booking code parameters and automatically search
   useEffect(() => {
     const code = searchParams.get("code");
-    const phone = searchParams.get("phone");
 
     if (code) {
       setBookingCodeInput(code);
-      if (phone) {
-        setPhoneInput(phone);
-        executeLookup(code, phone);
-      }
+      executeLookup(code);
     }
   }, [searchParams]);
 
-  const executeLookup = async (code: string, phone: string) => {
+  const executeLookup = async (code: string) => {
     try {
       setHasSearched(false);
       setErrorSearch(null);
       setLoadingSearch(true);
 
       const params = new URLSearchParams({ code });
-      if (phone) params.set("phone", phone);
 
       const res = await fetch(`/api/public/ticket?${params.toString()}`);
       const data = await res.json();
@@ -155,11 +150,11 @@ function SearchTicketContent() {
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!bookingCodeInput.trim() || !phoneInput.trim()) {
-      setErrorSearch("Kode booking dan nomor HP pemesan wajib diisi.");
+    if (!bookingCodeInput.trim()) {
+      setErrorSearch("Kode booking wajib diisi.");
       return;
     }
-    executeLookup(bookingCodeInput, phoneInput);
+    executeLookup(bookingCodeInput);
   };
 
   // 2. Submit cancellation with refund
@@ -175,7 +170,7 @@ function SearchTicketContent() {
         bankAccountNo: refundMethod === "CASH_PICKUP" ? "CASH" : bankAccountNo,
         bankAccountName: refundMethod === "CASH_PICKUP" ? "CASH" : bankAccountName,
         reason: cancelReason,
-        customerPhone: phoneInput
+        customerPhone: booking.phone
       };
 
       const res = await fetch(`/api/public/ticket/${booking.id}/refund`, {
@@ -192,7 +187,7 @@ function SearchTicketContent() {
       setCancelSuccess(true);
       // Reload ticket status from backend after 2 seconds
       setTimeout(() => {
-        executeLookup(booking.code, booking.phone);
+        executeLookup(booking.code);
         setCancelSuccess(false);
       }, 2000);
     } catch (err: any) {
@@ -228,7 +223,7 @@ function SearchTicketContent() {
 
       setReviewSuccess(true);
       setTimeout(() => {
-        executeLookup(booking.code, booking.phone);
+        executeLookup(booking.code);
       }, 1500);
     } catch (err: any) {
       console.error("Review submit error:", err);
@@ -239,6 +234,7 @@ function SearchTicketContent() {
   };
 
   const activeStatus = booking ? statuses.find((status) => status.key === booking.status) : null;
+  const ticketQrValue = booking ? searchParams.get("code") : "";
 
   const tripDetails = booking
     ? [
@@ -282,8 +278,8 @@ function SearchTicketContent() {
             </h1>
           </div>
           <p className="max-w-xl text-sm leading-6 font-medium text-slate-500 md:text-right">
-            Masukkan kode booking dan nomor HP pemesan untuk melihat status perjalanan secara live,
-            detail check-in driver, mengajukan refund, atau mengirim ulasan bintang.
+            Masukkan kode booking untuk melihat status perjalanan secara live, detail check-in
+            driver, mengajukan refund, atau mengirim ulasan bintang.
           </p>
         </div>
 
@@ -323,18 +319,6 @@ function SearchTicketContent() {
                     className="h-12 rounded-2xl border-slate-200 bg-slate-50 font-semibold text-slate-900"
                   />
                 </div>
-                <div>
-                  <label className="mb-2 block text-[10px] font-bold tracking-[0.14em] text-slate-500 uppercase">
-                    Nomor HP Pemesan
-                  </label>
-                  <Input
-                    placeholder="Contoh: 08123456789"
-                    value={phoneInput}
-                    onChange={(e) => setPhoneInput(e.target.value)}
-                    aria-label="Nomor HP Pemesan"
-                    className="h-12 rounded-2xl border-slate-200 bg-slate-50 font-semibold text-slate-900"
-                  />
-                </div>
                 <Button
                   type="submit"
                   disabled={loadingSearch}
@@ -356,8 +340,8 @@ function SearchTicketContent() {
               </form>
 
               <p className="mt-5 text-xs leading-5 text-slate-400">
-                Kode booking dan data kontak tersedia di WhatsApp konfirmasi atau email Anda sesaat
-                setelah pembayaran lunas.
+                Kode booking tersedia di WhatsApp konfirmasi atau email Anda sesaat setelah
+                pembayaran lunas.
               </p>
             </div>
 
@@ -718,18 +702,15 @@ function SearchTicketContent() {
                       </div>
 
                       {/* Dynamic QR code container */}
-                      <div className="mx-auto mb-5 grid size-44 grid-cols-5 gap-2 rounded-3xl bg-slate-950 p-4">
-                        {Array.from({ length: 25 }).map((_, index) => (
-                          <span
-                            key={index}
-                            className={cn(
-                              "rounded-sm",
-                              [0, 1, 3, 5, 6, 8, 11, 12, 14, 16, 18, 19, 21, 23, 24].includes(index)
-                                ? "bg-white"
-                                : "bg-teal-700"
-                            )}
-                          />
-                        ))}
+                      <div className="mx-auto mb-5 flex size-44 items-center justify-center rounded-3xl border border-slate-100 bg-white p-4 shadow-inner">
+                        <QRCode
+                          value={ticketQrValue}
+                          size={144}
+                          level="M"
+                          bgColor="#FFFFFF"
+                          fgColor="#0F172A"
+                          className="h-full w-full"
+                        />
                       </div>
 
                       <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-center">
@@ -1363,8 +1344,8 @@ function NotSearchedTicket() {
               },
               {
                 step: "02",
-                title: "Nomor HP Pemesan",
-                text: "Gunakan nomor kontak pemesan utama."
+                title: "Cek Status",
+                text: "Masukkan kode booking untuk membuka detail tiket."
               },
               { step: "03", title: "Lacak Live", text: "Tiket digital & status perjalanan instan." }
             ].map((item) => (

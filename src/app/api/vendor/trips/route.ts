@@ -150,6 +150,20 @@ export async function POST(req: NextRequest) {
       ? new Date(arrivalTime)
       : new Date(depTime.getTime() + parsedDuration * 60000);
 
+    if (arrTime < depTime) {
+      return NextResponse.json(
+        { error: "Waktu tiba tidak boleh lebih awal dari waktu keberangkatan." },
+        { status: 400 }
+      );
+    }
+
+    if (bookingDeadline && new Date(bookingDeadline) > depTime) {
+      return NextResponse.json(
+        { error: "Batas waktu booking (booking deadline) tidak boleh melebihi waktu keberangkatan." },
+        { status: 400 }
+      );
+    }
+
     const vehicleConflicts = await prisma.trip.findMany({
       where: {
         vehicleId,

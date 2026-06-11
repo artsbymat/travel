@@ -6,38 +6,165 @@ import { useTripStore } from "@/stores/tripStore";
 import dayjs from "dayjs";
 
 export default function EditTripDialog() {
-  const { editDialogOpen, selectedTrip, loading, error, setEditDialogOpen, updateTrip } = useTripStore();
+  const { editDialogOpen, selectedTrip, loading, error, setEditDialogOpen, updateTrip } =
+    useTripStore();
 
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [drivers, setDrivers] = useState<any[]>([]);
   const [form, setForm] = useState<any>({});
 
+  // Autocomplete states
+  const [originSearch, setOriginSearch] = useState("");
+  const [destSearch, setDestSearch] = useState("");
+  const [originSuggestions, setOriginSuggestions] = useState<any[]>([]);
+  const [destSuggestions, setDestSuggestions] = useState<any[]>([]);
+  const [showOriginDropdown, setShowOriginDropdown] = useState(false);
+  const [showDestDropdown, setShowDestDropdown] = useState(false);
+  const [arrivalError, setArrivalError] = useState<string | null>(null);
+  const [deadlineError, setDeadlineError] = useState<string | null>(null);
+
   useEffect(() => {
     if (editDialogOpen && selectedTrip) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOriginSearch(selectedTrip.origin || "");
+      setDestSearch(selectedTrip.destination || "");
+      setArrivalError(null);
+      setDeadlineError(null);
       setForm({
         departureTime: dayjs(selectedTrip.departureTime).format("YYYY-MM-DDTHH:mm"),
-        arrivalTime: selectedTrip.arrivalTime ? dayjs(selectedTrip.arrivalTime).format("YYYY-MM-DDTHH:mm") : "",
+        arrivalTime: selectedTrip.arrivalTime
+          ? dayjs(selectedTrip.arrivalTime).format("YYYY-MM-DDTHH:mm")
+          : "",
         durationMinutes: selectedTrip.durationMinutes || 120,
         vehicleId: selectedTrip.vehicleId,
         driverId: selectedTrip.driverId || "",
         price: selectedTrip.price,
         notes: selectedTrip.notes || "",
         status: selectedTrip.status,
-        bookingDeadline: selectedTrip.bookingDeadline ? dayjs(selectedTrip.bookingDeadline).format("YYYY-MM-DDTHH:mm") : "",
+        bookingDeadline: selectedTrip.bookingDeadline
+          ? dayjs(selectedTrip.bookingDeadline).format("YYYY-MM-DDTHH:mm")
+          : "",
         origin: selectedTrip.origin,
         destination: selectedTrip.destination,
-        minBooking: selectedTrip.minBooking || 1,
+        minBooking: selectedTrip.minBooking || 1
       });
-      fetch("/api/vendor/fleet").then(r => r.json()).then(d => { if (Array.isArray(d)) setVehicles(d.filter((v: any) => v.status === "ACTIVE")); }).catch(() => {});
-      fetch("/api/vendor/drivers").then(r => r.json()).then(d => { if (Array.isArray(d)) setDrivers(d); }).catch(() => {});
+      fetch("/api/vendor/fleet")
+        .then((r) => r.json())
+        .then((d) => {
+          if (Array.isArray(d)) setVehicles(d.filter((v: any) => v.status === "ACTIVE"));
+        })
+        .catch(() => {});
+      fetch("/api/vendor/drivers")
+        .then((r) => r.json())
+        .then((d) => {
+          if (Array.isArray(d)) setDrivers(d);
+        })
+        .catch(() => {});
     }
   }, [editDialogOpen, selectedTrip]);
+
+  // Fetch autocomplete suggestions
+  useEffect(() => {
+    if (originSearch.trim().length > 1) {
+      const timer = setTimeout(() => {
+        fetch(`/api/cities?q=${encodeURIComponent(originSearch)}&limit=10`)
+          .then((r) => r.json())
+          .then((d) => {
+            if (Array.isArray(d)) setOriginSuggestions(d);
+          })
+          .catch(() => {});
+      }, 200);
+      return () => clearTimeout(timer);
+    } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOriginSuggestions([]);
+    }
+  }, [originSearch]);
+
+  useEffect(() => {
+    if (destSearch.trim().length > 1) {
+      const timer = setTimeout(() => {
+        fetch(`/api/cities?q=${encodeURIComponent(destSearch)}&limit=10`)
+          .then((r) => r.json())
+          .then((d) => {
+            if (Array.isArray(d)) setDestSuggestions(d);
+          })
+          .catch(() => {});
+      }, 200);
+      return () => clearTimeout(timer);
+    } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDestSuggestions([]);
+    }
+  }, [destSearch]);
+
+  // Real-time per-field validation
+  useEffect(() => {
+    if (form.departureTime && form.arrivalTime) {
+      const depTime = new Date(form.departureTime);
+      const arrTime = new Date(form.arrivalTime);
+      if (arrTime <= depTime) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setArrivalError("Waktu tiba harus setelah waktu keberangkatan.");
+      } else {
+        setArrivalError(null);
+      }
+    } else {
+      setArrivalError(null);
+    }
+  }, [form.departureTime, form.arrivalTime]);
+
+  useEffect(() => {
+    if (form.departureTime && form.bookingDeadline) {
+      const depTime = new Date(form.departureTime);
+      const deadline = new Date(form.bookingDeadline);
+      if (deadline >= depTime) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setDeadlineError("Deadline booking harus sebelum waktu keberangkatan.");
+      } else {
+        setDeadlineError(null);
+      }
+    } else {
+      setDeadlineError(null);
+    }
+  }, [form.departureTime, form.bookingDeadline]);
 
   const handleChange = (e: any) => setForm((f: any) => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     if (!selectedTrip) return;
+    if (arrivalError || deadlineError) return;
+
+    const depTime = form.departureTime
+      ? new Date(form.departureTime)
+      : new Date(selectedTrip.departureTime);
+    const duration = form.durationMinutes
+      ? parseInt(form.durationMinutes)
+      : selectedTrip.durationMinutes || 120;
+    const arrTime = form.arrivalTime
+      ? new Date(form.arrivalTime)
+      : selectedTrip.arrivalTime
+        ? new Date(selectedTrip.arrivalTime)
+        : new Date(depTime.getTime() + duration * 60000);
+
+    const deadline =
+      form.bookingDeadline !== undefined
+        ? form.bookingDeadline
+          ? new Date(form.bookingDeadline)
+          : null
+        : selectedTrip.bookingDeadline
+          ? new Date(selectedTrip.bookingDeadline)
+          : null;
+
+    if (arrTime <= depTime) {
+      return;
+    }
+
+    if (deadline && deadline >= depTime) {
+      return;
+    }
+
     const payload: any = {};
     if (form.departureTime) payload.departureTime = new Date(form.departureTime).toISOString();
     if (form.arrivalTime) payload.arrivalTime = new Date(form.arrivalTime).toISOString();
@@ -47,7 +174,8 @@ export default function EditTripDialog() {
     if (form.price) payload.price = parseFloat(form.price);
     payload.notes = form.notes || null;
     if (form.status) payload.status = form.status;
-    if (form.bookingDeadline) payload.bookingDeadline = new Date(form.bookingDeadline).toISOString();
+    if (form.bookingDeadline)
+      payload.bookingDeadline = new Date(form.bookingDeadline).toISOString();
     if (form.origin) payload.origin = form.origin;
     if (form.destination) payload.destination = form.destination;
     if (form.minBooking !== undefined) payload.minBooking = parseInt(form.minBooking);
@@ -58,49 +186,209 @@ export default function EditTripDialog() {
 
   return (
     <div className="trip-modal-overlay" onClick={() => setEditDialogOpen(false)}>
-      <div className="trip-modal" onClick={e => e.stopPropagation()}>
+      <div className="trip-modal" onClick={(e) => e.stopPropagation()}>
         <div className="trip-modal-header">
           <h2 className="trip-modal-title">✏️ Edit Trip</h2>
-          <button className="trip-btn trip-btn-ghost trip-btn-icon" onClick={() => setEditDialogOpen(false)}>✕</button>
+          <button
+            className="trip-btn trip-btn-ghost trip-btn-icon"
+            onClick={() => setEditDialogOpen(false)}
+          >
+            ✕
+          </button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="trip-modal-body">
             <div className="trip-form">
               <div className="trip-form-row">
-                <div className="trip-form-group">
+                <div className="trip-form-group" style={{ position: "relative" }}>
                   <label className="trip-form-label">Kota Asal</label>
-                  <input className="trip-form-input" name="origin" value={form.origin || ""} onChange={handleChange} />
+                  <input
+                    className="trip-form-input"
+                    placeholder="Cari kota asal..."
+                    value={originSearch}
+                    onChange={(e) => {
+                      setOriginSearch(e.target.value);
+                      setForm((f: any) => ({ ...f, origin: e.target.value }));
+                      setShowOriginDropdown(true);
+                    }}
+                    onFocus={() => setShowOriginDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowOriginDropdown(false), 200)}
+                    required
+                  />
+                  {showOriginDropdown && originSuggestions.length > 0 && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        right: 0,
+                        backgroundColor: "#ffffff",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "10px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                        zIndex: 1000,
+                        maxHeight: "200px",
+                        overflowY: "auto",
+                        marginTop: "4px"
+                      }}
+                    >
+                      {originSuggestions.map((city) => (
+                        <div
+                          key={city.id}
+                          onClick={() => {
+                            setForm((f: any) => ({ ...f, origin: city.name }));
+                            setOriginSearch(city.name);
+                            setShowOriginDropdown(false);
+                          }}
+                          style={{
+                            padding: "0.6rem 0.9rem",
+                            cursor: "pointer",
+                            fontSize: "0.85rem",
+                            color: "#0f172a",
+                            fontWeight: 500,
+                            borderBottom: "1px solid #f1f5f9"
+                          }}
+                          onMouseDown={(e) => e.preventDefault()}
+                        >
+                          📍 {city.name} {city.province ? `(${city.province.name})` : ""}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className="trip-form-group">
+                <div className="trip-form-group" style={{ position: "relative" }}>
                   <label className="trip-form-label">Kota Tujuan</label>
-                  <input className="trip-form-input" name="destination" value={form.destination || ""} onChange={handleChange} />
+                  <input
+                    className="trip-form-input"
+                    placeholder="Cari kota tujuan..."
+                    value={destSearch}
+                    onChange={(e) => {
+                      setDestSearch(e.target.value);
+                      setForm((f: any) => ({ ...f, destination: e.target.value }));
+                      setShowDestDropdown(true);
+                    }}
+                    onFocus={() => setShowDestDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowDestDropdown(false), 200)}
+                    required
+                  />
+                  {showDestDropdown && destSuggestions.length > 0 && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        right: 0,
+                        backgroundColor: "#ffffff",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "10px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                        zIndex: 1000,
+                        maxHeight: "200px",
+                        overflowY: "auto",
+                        marginTop: "4px"
+                      }}
+                    >
+                      {destSuggestions.map((city) => (
+                        <div
+                          key={city.id}
+                          onClick={() => {
+                            setForm((f: any) => ({ ...f, destination: city.name }));
+                            setDestSearch(city.name);
+                            setShowDestDropdown(false);
+                          }}
+                          style={{
+                            padding: "0.6rem 0.9rem",
+                            cursor: "pointer",
+                            fontSize: "0.85rem",
+                            color: "#0f172a",
+                            fontWeight: 500,
+                            borderBottom: "1px solid #f1f5f9"
+                          }}
+                          onMouseDown={(e) => e.preventDefault()}
+                        >
+                          📍 {city.name} {city.province ? `(${city.province.name})` : ""}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="trip-form-row">
                 <div className="trip-form-group">
                   <label className="trip-form-label">Waktu Berangkat</label>
-                  <input className="trip-form-input" type="datetime-local" name="departureTime" value={form.departureTime || ""} onChange={handleChange} />
+                  <input
+                    className="trip-form-input"
+                    type="datetime-local"
+                    name="departureTime"
+                    value={form.departureTime || ""}
+                    onChange={handleChange}
+                  />
                 </div>
                 <div className="trip-form-group">
                   <label className="trip-form-label">Waktu Tiba</label>
-                  <input className="trip-form-input" type="datetime-local" name="arrivalTime" value={form.arrivalTime || ""} onChange={handleChange} />
+                  <input
+                    className="trip-form-input"
+                    type="datetime-local"
+                    name="arrivalTime"
+                    value={form.arrivalTime || ""}
+                    onChange={handleChange}
+                    style={arrivalError ? { borderColor: "#ef4444", background: "#fff5f5" } : {}}
+                  />
+                  {arrivalError && (
+                    <div className="trip-field-error">
+                      <span>⚠️</span> {arrivalError}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="trip-form-row">
                 <div className="trip-form-group">
+                  <label className="trip-form-label">Deadline Booking</label>
+                  <input
+                    className="trip-form-input"
+                    type="datetime-local"
+                    name="bookingDeadline"
+                    value={form.bookingDeadline || ""}
+                    onChange={handleChange}
+                    style={deadlineError ? { borderColor: "#ef4444", background: "#fff5f5" } : {}}
+                  />
+                  {deadlineError && (
+                    <div className="trip-field-error">
+                      <span>⚠️</span> {deadlineError}
+                    </div>
+                  )}
+                </div>
+                <div className="trip-form-group" />
+              </div>
+              <div className="trip-form-row">
+                <div className="trip-form-group">
                   <label className="trip-form-label">Kendaraan</label>
-                  <select className="trip-form-select" name="vehicleId" value={form.vehicleId || ""} onChange={handleChange}>
-                    {vehicles.map(v => (
-                      <option key={v.id} value={v.id}>{v.brand} {v.model} ({v.licensePlate})</option>
+                  <select
+                    className="trip-form-select"
+                    name="vehicleId"
+                    value={form.vehicleId || ""}
+                    onChange={handleChange}
+                  >
+                    {vehicles.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.brand} {v.model} ({v.licensePlate})
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div className="trip-form-group">
                   <label className="trip-form-label">Driver</label>
-                  <select className="trip-form-select" name="driverId" value={form.driverId || ""} onChange={handleChange}>
+                  <select
+                    className="trip-form-select"
+                    name="driverId"
+                    value={form.driverId || ""}
+                    onChange={handleChange}
+                  >
                     <option value="">Belum ditentukan</option>
-                    {drivers.map(d => (
-                      <option key={d.id} value={d.id}>{d.name}</option>
+                    {drivers.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -108,17 +396,35 @@ export default function EditTripDialog() {
               <div className="trip-form-row">
                 <div className="trip-form-group">
                   <label className="trip-form-label">Harga (Rp)</label>
-                  <input className="trip-form-input" type="number" name="price" value={form.price || ""} onChange={handleChange} />
+                  <input
+                    className="trip-form-input"
+                    type="number"
+                    name="price"
+                    value={form.price || ""}
+                    onChange={handleChange}
+                  />
                 </div>
                 <div className="trip-form-group">
                   <label className="trip-form-label">Min. Keberangkatan (Kursi)</label>
-                  <input className="trip-form-input" type="number" name="minBooking" value={form.minBooking || "1"} onChange={handleChange} min="1" />
+                  <input
+                    className="trip-form-input"
+                    type="number"
+                    name="minBooking"
+                    value={form.minBooking || "1"}
+                    onChange={handleChange}
+                    min="1"
+                  />
                 </div>
               </div>
               <div className="trip-form-row">
                 <div className="trip-form-group">
                   <label className="trip-form-label">Status</label>
-                  <select className="trip-form-select" name="status" value={form.status || ""} onChange={handleChange}>
+                  <select
+                    className="trip-form-select"
+                    name="status"
+                    value={form.status || ""}
+                    onChange={handleChange}
+                  >
                     <option value="SCHEDULED">Terjadwal</option>
                     <option value="ONGOING">Berlangsung</option>
                     <option value="COMPLETED">Selesai</option>
@@ -130,13 +436,24 @@ export default function EditTripDialog() {
               </div>
               <div className="trip-form-group">
                 <label className="trip-form-label">Catatan</label>
-                <textarea className="trip-form-textarea" name="notes" value={form.notes || ""} onChange={handleChange} />
+                <textarea
+                  className="trip-form-textarea"
+                  name="notes"
+                  value={form.notes || ""}
+                  onChange={handleChange}
+                />
               </div>
               {error && <div className="trip-form-error">❌ {error}</div>}
             </div>
           </div>
           <div className="trip-modal-footer">
-            <button type="button" className="trip-btn trip-btn-secondary" onClick={() => setEditDialogOpen(false)}>Batal</button>
+            <button
+              type="button"
+              className="trip-btn trip-btn-secondary"
+              onClick={() => setEditDialogOpen(false)}
+            >
+              Batal
+            </button>
             <button type="submit" className="trip-btn trip-btn-primary" disabled={loading}>
               {loading ? "Menyimpan..." : "Simpan Perubahan"}
             </button>

@@ -155,13 +155,35 @@ export async function PATCH(
       }
     }
 
+    // Validation
+    const depTimeForVal = updateData.departureTime || trip.departureTime;
+    const arrTimeForVal =
+      updateData.arrivalTime ||
+      trip.arrivalTime ||
+      new Date(new Date(depTimeForVal).getTime() + (updateData.durationMinutes || trip.durationMinutes || 120) * 60000);
+    const deadlineForVal = updateData.bookingDeadline !== undefined ? updateData.bookingDeadline : trip.bookingDeadline;
+
+    if (new Date(arrTimeForVal) < new Date(depTimeForVal)) {
+      return NextResponse.json(
+        { error: "Waktu tiba tidak boleh lebih awal dari waktu keberangkatan." },
+        { status: 400 }
+      );
+    }
+
+    if (deadlineForVal && new Date(deadlineForVal) > new Date(depTimeForVal)) {
+      return NextResponse.json(
+        { error: "Batas waktu booking (booking deadline) tidak boleh melebihi waktu keberangkatan." },
+        { status: 400 }
+      );
+    }
+
     // Conflict checks if time or vehicle/driver changed
     if (updateData.vehicleId || updateData.departureTime || updateData.arrivalTime) {
       const depTime = updateData.departureTime || trip.departureTime;
       const arrTime =
         updateData.arrivalTime ||
         trip.arrivalTime ||
-        new Date(new Date(depTime).getTime() + (trip.durationMinutes || 120) * 60000);
+        new Date(new Date(depTime).getTime() + (updateData.durationMinutes || trip.durationMinutes || 120) * 60000);
 
       const vId = updateData.vehicleId || trip.vehicleId;
 

@@ -85,10 +85,10 @@ export default function DetailTrip() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const tripId = params.id as string;
   const passengerCount = getPassengerCount(searchParams.get("passengers"));
-  
+
   // Dynamic database states
   const [trip, setTrip] = useState<any>(null);
   const [seatLayout, setSeatLayout] = useState<any>(null);
@@ -128,7 +128,7 @@ export default function DetailTrip() {
           const data = await res.json();
           setTrip(data.trip);
           setSeatLayout(data.seatLayout);
-          
+
           // Pre-fill addresses based on origin/destination details
           setContact((prev) => ({
             ...prev,
@@ -264,7 +264,7 @@ export default function DetailTrip() {
       ...current,
       pickupLat: data.lat,
       pickupLng: data.lng,
-      pickupAddress: data.address,
+      pickupAddress: data.address
     }));
   };
 
@@ -273,7 +273,7 @@ export default function DetailTrip() {
     try {
       setBookingError(null);
       setSubmittingBooking(true);
-      
+
       const payload = {
         tripId,
         selectedSeats,
@@ -334,8 +334,8 @@ export default function DetailTrip() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
         <div className="text-center">
-          <Loader2 className="h-16 w-16 animate-spin text-teal-700 mx-auto" />
-          <p className="mt-4 text-sm font-bold text-gray-500 uppercase tracking-widest">
+          <Loader2 className="mx-auto h-16 w-16 animate-spin text-teal-700" />
+          <p className="mt-4 text-sm font-bold tracking-widest text-gray-500 uppercase">
             Memuat Data Perjalanan...
           </p>
         </div>
@@ -346,15 +346,16 @@ export default function DetailTrip() {
   if (!trip) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] p-6">
-        <div className="max-w-md text-center rounded-3xl bg-white border border-gray-100 p-8 shadow-sm">
-          <AlertTriangle className="h-16 w-16 text-rose-500 mx-auto" />
+        <div className="max-w-md rounded-3xl border border-gray-100 bg-white p-8 text-center shadow-sm">
+          <AlertTriangle className="mx-auto h-16 w-16 text-rose-500" />
           <h2 className="mt-4 text-2xl font-bold text-gray-950">Oops!</h2>
-          <p className="mt-2 text-sm text-gray-500 leading-6">
-            Jadwal perjalanan tidak valid atau telah kedaluwarsa. Silakan cari rute kembali di halaman utama.
+          <p className="mt-2 text-sm leading-6 text-gray-500">
+            Jadwal perjalanan tidak valid atau telah kedaluwarsa. Silakan cari rute kembali di
+            halaman utama.
           </p>
           <Button
             onClick={() => router.push("/trips")}
-            className="mt-6 rounded-xl bg-teal-700 text-white hover:bg-teal-800 font-bold"
+            className="mt-6 rounded-xl bg-teal-700 font-bold text-white hover:bg-teal-800"
           >
             Kembali ke Pencarian
           </Button>
@@ -371,24 +372,33 @@ export default function DetailTrip() {
             <p className="text-xs font-bold tracking-[0.2em] text-[#0D9488] uppercase">
               Detail Trip & Checkout
             </p>
-            <h1 className="mt-2 text-3xl font-bold text-gray-950 sm:text-5xl tracking-tight">
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-950 sm:text-5xl">
               Pilih kursi dan lengkapi data
             </h1>
             <p className="mt-3 max-w-2xl text-sm font-medium text-gray-500 sm:text-base">
-              Selesaikan pengisian data penumpang, kemudian lakukan simulasi pembayaran secara langsung di halaman checkout ini.
+              Selesaikan pengisian data penumpang, kemudian lakukan simulasi pembayaran secara
+              langsung di halaman checkout ini.
             </p>
           </div>
 
           <div className="grid grid-cols-2 overflow-hidden rounded-2xl border border-gray-200 bg-white p-1 shadow-sm">
-            <StepBadge active={step === "booking" && !createdBooking} done={step === "payment" || !!createdBooking} label="Data Booking" />
-            <StepBadge active={step === "payment" || !!createdBooking} done={paymentSuccess} label="Pembayaran" />
+            <StepBadge
+              active={step === "booking" && !createdBooking}
+              done={step === "payment" || !!createdBooking}
+              label="Data Booking"
+            />
+            <StepBadge
+              active={step === "payment" || !!createdBooking}
+              done={paymentSuccess}
+              label="Pembayaran"
+            />
           </div>
         </header>
 
         {/* Global Error Banner */}
         {bookingError && (
-          <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-800 flex items-center gap-3">
-            <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0" />
+          <div className="mb-6 flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-800">
+            <AlertTriangle className="h-5 w-5 shrink-0 text-rose-600" />
             {bookingError}
           </div>
         )}
@@ -399,48 +409,69 @@ export default function DetailTrip() {
 
         {/* Dynamic Sandbox Payment Card */}
         {createdBooking ? (
-          <section className="mt-8 rounded-3xl border border-teal-100 bg-teal-50/50 p-6 md:p-8 shadow-sm flex flex-col items-center justify-center text-center">
+          <section className="mt-8 flex flex-col items-center justify-center rounded-3xl border border-teal-100 bg-teal-50/50 p-6 text-center shadow-sm md:p-8">
             {createdBooking.paymentMethod === "CASH" ? (
               <div className="max-w-xl py-6">
-                <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-md animate-bounce">
+                <div className="mx-auto flex size-16 animate-bounce items-center justify-center rounded-2xl bg-teal-600 text-white shadow-md">
                   <Check className="h-8 w-8" />
                 </div>
                 <h3 className="mt-6 text-2xl font-bold text-gray-950">💵 Pemesanan Cash Sukses!</h3>
-                <p className="mt-3 text-sm text-gray-500 leading-6">
-                  Pemesanan Anda terdaftar dengan Kode Booking <span className="font-mono font-bold text-teal-800">{createdBooking.bookingCode}</span>. Pembayaran dilakukan secara tunai sebesar <span className="font-bold text-teal-700">{currencyFormatter.format(totalPrice)}</span> langsung saat keberangkatan kepada staff pool atau driver travel.
+                <p className="mt-3 text-sm leading-6 text-gray-500">
+                  Pemesanan Anda terdaftar dengan Kode Booking{" "}
+                  <span className="font-mono font-bold text-teal-800">
+                    {createdBooking.bookingCode}
+                  </span>
+                  . Pembayaran dilakukan secara tunai sebesar{" "}
+                  <span className="font-bold text-teal-700">
+                    {currencyFormatter.format(totalPrice)}
+                  </span>{" "}
+                  langsung saat keberangkatan kepada staff pool atau driver travel.
                 </p>
 
-                <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm flex items-start gap-4">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700 border border-teal-100">
+                <div className="mt-6 flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-teal-100 bg-teal-50 text-teal-700">
                     <ShieldCheck className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-gray-950 text-sm">Menunggu Verifikasi Boarding</h4>
-                    <p className="mt-1 text-xs text-gray-500 leading-5">
-                      Status tiket Anda saat ini adalah <span className="font-bold text-amber-700 uppercase tracking-wide">Menunggu Pembayaran Tunai</span>. Staff atau driver bertugas akan memverifikasi dan menandai tiket Anda lunas manual ketika Anda membayar langsung di lokasi.
+                    <h4 className="text-sm font-bold text-gray-950">
+                      Menunggu Verifikasi Boarding
+                    </h4>
+                    <p className="mt-1 text-xs leading-5 text-gray-500">
+                      Status tiket Anda saat ini adalah{" "}
+                      <span className="font-bold tracking-wide text-amber-700 uppercase">
+                        Menunggu Pembayaran Tunai
+                      </span>
+                      . Staff atau driver bertugas akan memverifikasi dan menandai tiket Anda lunas
+                      manual ketika Anda membayar langsung di lokasi.
                     </p>
                   </div>
                 </div>
 
                 <Button
                   onClick={() => router.push(`/ticket?code=${createdBooking.bookingCode}`)}
-                  className="mt-8 h-12 w-full rounded-xl bg-teal-700 hover:bg-teal-800 font-bold text-white uppercase tracking-wider text-xs shadow-lg shadow-teal-900/10 flex items-center justify-center gap-2"
+                  className="mt-8 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-teal-700 text-xs font-bold tracking-wider text-white uppercase shadow-lg shadow-teal-900/10 hover:bg-teal-800"
                 >
                   🎫 Lihat Tiket Digital Anda
                 </Button>
               </div>
             ) : paymentSuccess ? (
               <div className="max-w-md py-8">
-                <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-emerald-500 text-white animate-bounce">
+                <div className="mx-auto flex size-20 animate-bounce items-center justify-center rounded-full bg-emerald-500 text-white">
                   <Check className="h-10 w-10" />
                 </div>
                 <h3 className="mt-6 text-3xl font-bold text-gray-900">Simulasi Sukses!</h3>
-                <p className="mt-3 text-sm text-gray-500 leading-6">
-                  Pembayaran untuk kode booking <span className="font-mono font-bold text-teal-800">{createdBooking.bookingCode}</span> lunas. Anda akan diarahkan ke tiket digital Anda dalam beberapa detik...
+                <p className="mt-3 text-sm leading-6 text-gray-500">
+                  Pembayaran untuk kode booking{" "}
+                  <span className="font-mono font-bold text-teal-800">
+                    {createdBooking.bookingCode}
+                  </span>{" "}
+                  lunas. Anda akan diarahkan ke tiket digital Anda dalam beberapa detik...
                 </p>
                 <div className="mt-6 flex items-center justify-center gap-2">
                   <Loader2 className="h-5 w-5 animate-spin text-teal-700" />
-                  <span className="text-xs font-bold text-teal-800 tracking-wider uppercase">Menyiapkan Tiket Digital...</span>
+                  <span className="text-xs font-bold tracking-wider text-teal-800 uppercase">
+                    Menyiapkan Tiket Digital...
+                  </span>
                 </div>
               </div>
             ) : (
@@ -448,9 +479,19 @@ export default function DetailTrip() {
                 <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-md">
                   <Coins className="h-8 w-8" />
                 </div>
-                <h3 className="mt-6 text-2xl font-bold text-gray-900">🎟️ Booking Berhasil Dibuat!</h3>
-                <p className="mt-2 text-sm text-gray-500 leading-6">
-                  Pemesanan Anda terdaftar dengan Kode Booking <span className="font-mono font-bold text-teal-800">{createdBooking.bookingCode}</span> senilai <span className="font-bold text-teal-700">{currencyFormatter.format(totalPrice)}</span>.
+                <h3 className="mt-6 text-2xl font-bold text-gray-900">
+                  🎟️ Booking Berhasil Dibuat!
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-gray-500">
+                  Pemesanan Anda terdaftar dengan Kode Booking{" "}
+                  <span className="font-mono font-bold text-teal-800">
+                    {createdBooking.bookingCode}
+                  </span>{" "}
+                  senilai{" "}
+                  <span className="font-bold text-teal-700">
+                    {currencyFormatter.format(totalPrice)}
+                  </span>
+                  .
                 </p>
 
                 {/* Simulated payment box */}
@@ -460,9 +501,11 @@ export default function DetailTrip() {
                       <Gift className="h-5 w-5" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-gray-900 text-sm">Sandbox Mode Enabled</h4>
-                      <p className="mt-1 text-xs text-gray-500 leading-5">
-                        Anda dapat menekan tombol emas di bawah untuk langsung menyimulasikan kelunasan tagihan ini. Ini akan memutasi saldo real-time dompet vendor, merekam entri Ledger akuntansi, dan mengaktifkan QR Code tiket instan.
+                      <h4 className="text-sm font-bold text-gray-900">Sandbox Mode Enabled</h4>
+                      <p className="mt-1 text-xs leading-5 text-gray-500">
+                        Anda dapat menekan tombol emas di bawah untuk langsung menyimulasikan
+                        kelunasan tagihan ini. Ini akan memutasi saldo real-time dompet vendor,
+                        merekam entri Ledger akuntansi, dan mengaktifkan QR Code tiket instan.
                       </p>
                     </div>
                   </div>
@@ -470,7 +513,7 @@ export default function DetailTrip() {
                   <Button
                     onClick={handleSimulatePayment}
                     disabled={paymentSimulating}
-                    className="mt-6 h-12 w-full rounded-xl bg-[#8B5E02] hover:bg-[#744E02] font-bold text-white uppercase tracking-wider text-xs shadow-lg shadow-amber-900/10 flex items-center justify-center gap-2"
+                    className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#8B5E02] text-xs font-bold tracking-wider text-white uppercase shadow-lg shadow-amber-900/10 hover:bg-[#744E02]"
                   >
                     {paymentSimulating ? (
                       <>
@@ -478,9 +521,7 @@ export default function DetailTrip() {
                         Memproses Mutasi Wallet...
                       </>
                     ) : (
-                      <>
-                        💳 Simulasikan Pembayaran Lunas (Sandbox)
-                      </>
+                      <>💳 Simulasikan Pembayaran Lunas (Sandbox)</>
                     )}
                   </Button>
                 </div>
@@ -518,7 +559,11 @@ export default function DetailTrip() {
                 onChange={updatePassenger}
               />
 
-              <ContactForm contact={contact} onChange={updateContact} onMapChange={handlePickupMapChange} />
+              <ContactForm
+                contact={contact}
+                onChange={updateContact}
+                onMapChange={handlePickupMapChange}
+              />
 
               <PolicyAgreement checked={agreed} onChange={setAgreed} />
             </main>
@@ -619,8 +664,8 @@ function StepBadge({ active, done, label }: { active: boolean; done: boolean; la
         active
           ? "bg-teal-700 text-white shadow-sm"
           : done
-          ? "bg-emerald-600 text-white"
-          : "text-gray-500 bg-transparent"
+            ? "bg-emerald-600 text-white"
+            : "bg-transparent text-gray-500"
       )}
     >
       {done ? <Check size={15} /> : <span className="size-2 rounded-full bg-current" />}
@@ -671,9 +716,10 @@ function TripInfo({ trip }: { trip: any }) {
       <div className="p-5 sm:p-6 lg:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-gray-950 leading-tight">{trip.provider}</h2>
-            <p className="mt-2 text-sm leading-6 text-gray-500 max-w-xl">
-              {trip.origin} ke {trip.destination} dengan armada premium kelas tertinggi, dilengkapi kursi empuk, AC dingin, dan berbagai fasilitas lengkap lainnya.
+            <h2 className="text-2xl leading-tight font-bold text-gray-950">{trip.provider}</h2>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-gray-500">
+              {trip.origin} ke {trip.destination} dengan armada premium kelas tertinggi, dilengkapi
+              kursi empuk, AC dingin, dan berbagai fasilitas lengkap lainnya.
             </p>
             <div className="mt-4 flex flex-wrap gap-3 text-gray-500">
               {trip.amenities.map((amenity: string, idx: number) => {
@@ -685,7 +731,7 @@ function TripInfo({ trip }: { trip: any }) {
             </div>
           </div>
 
-          <div className="rounded-2xl bg-teal-50 border border-teal-100/50 p-4 text-left lg:min-w-52">
+          <div className="rounded-2xl border border-teal-100/50 bg-teal-50 p-4 text-left lg:min-w-52">
             <p className="text-[10px] font-bold tracking-[0.18em] text-teal-600 uppercase">
               Harga per kursi
             </p>
@@ -721,9 +767,11 @@ function WarningBox({ trip }: { trip: any }) {
           <AlertTriangle size={20} />
         </div>
         <div>
-          <h2 className="font-bold text-sm">Ketentuan Keberangkatan & Pembatalan</h2>
+          <h2 className="text-sm font-bold">Ketentuan Keberangkatan & Pembatalan</h2>
           <p className="mt-1 text-xs leading-5 text-amber-900">
-            Jadwal perjalanan ini memerlukan minimal <strong>{trip.minPassengers} penumpang</strong> untuk jaminan keberangkatan. Jika kuota tidak terpenuhi, vendor dapat menjadwalkan ulang atau melakukan refund penuh.
+            Jadwal perjalanan ini memerlukan minimal <strong>{trip.minPassengers} penumpang</strong>{" "}
+            untuk jaminan keberangkatan. Jika kuota tidak terpenuhi, vendor dapat menjadwalkan ulang
+            atau melakukan refund penuh.
           </p>
           {remainingPassengers > 0 ? (
             <p className="mt-3 text-[10px] font-bold tracking-widest text-[#8B5E02] uppercase">
@@ -776,9 +824,7 @@ function SeatLayout({
             style={{ gridTemplateColumns: `repeat(${layoutColumns}, minmax(0, 1fr))` }}
           >
             {cells.map(({ row, column, seat }) => {
-              const isDriver =
-                row === driverPos.row &&
-                column === driverPos.column;
+              const isDriver = row === driverPos.row && column === driverPos.column;
 
               if (isDriver) {
                 return (
@@ -805,7 +851,7 @@ function SeatLayout({
                   disabled={disabled}
                   onClick={() => onToggleSeat(seat)}
                   className={cn(
-                    "flex aspect-square items-center justify-center rounded-2xl border text-xs font-bold transition-all relative",
+                    "relative flex aspect-square items-center justify-center rounded-2xl border text-xs font-bold transition-all",
                     selected && "border-teal-700 bg-teal-700 text-white shadow-md",
                     !selected &&
                       seat.status === "available" &&
@@ -816,11 +862,7 @@ function SeatLayout({
                       "cursor-not-allowed border-amber-100 bg-amber-100 text-amber-600"
                   )}
                 >
-                  {seat.status === "booked" ? (
-                    <Lock className="h-3.5 w-3.5" />
-                  ) : (
-                    seat.id
-                  )}
+                  {seat.status === "booked" ? <Lock className="h-3.5 w-3.5" /> : seat.id}
                 </button>
               );
             })}
@@ -832,14 +874,21 @@ function SeatLayout({
         <div className="grid gap-3 sm:grid-cols-2">
           <LegendItem className="bg-white ring-1 ring-gray-200" label="Tersedia" />
           <LegendItem className="bg-teal-700" label="Dipilih" />
-          <LegendItem className="bg-red-100 text-red-400 flex items-center justify-center" label="Booked" />
-          <LegendItem className="bg-amber-100 text-amber-600 flex items-center justify-center" label="Kunci (Locked)" />
+          <LegendItem
+            className="flex items-center justify-center bg-red-100 text-red-400"
+            label="Booked"
+          />
+          <LegendItem
+            className="flex items-center justify-center bg-amber-100 text-amber-600"
+            label="Kunci (Locked)"
+          />
         </div>
 
         <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
           <p className="text-sm font-bold text-gray-950">Kapasitas Pilihan Kursi</p>
           <p className="mt-2 text-xs leading-5 text-gray-500">
-            Pilih tepat {passengerCount} kursi. Pastikan Anda mengisi nama dan no kontak penumpang untuk manifest boarding driver pada tabel manifest di bawah.
+            Pilih tepat {passengerCount} kursi. Pastikan Anda mengisi nama dan no kontak penumpang
+            untuk manifest boarding driver pada tabel manifest di bawah.
           </p>
           <p className="mt-3 text-xs font-bold tracking-widest text-[#0D9488] uppercase">
             {availableSeats} kursi kosong tersedia
@@ -871,8 +920,8 @@ function PassengerFormList({
         {passengers.map((passenger, index) => (
           <div key={index} className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <h3 className="font-bold text-gray-950 text-sm">Penumpang {index + 1}</h3>
-              <span className="rounded-full bg-teal-600/10 text-teal-800 px-3 py-1 text-xs font-bold">
+              <h3 className="text-sm font-bold text-gray-950">Penumpang {index + 1}</h3>
+              <span className="rounded-full bg-teal-600/10 px-3 py-1 text-xs font-bold text-teal-800">
                 Kursi: {selectedSeats[index] ?? "Belum dipilih"}
               </span>
             </div>
@@ -882,7 +931,7 @@ function PassengerFormList({
                   value={passenger.fullName}
                   onChange={(event) => onChange(index, "fullName", event.target.value)}
                   placeholder="Contoh: Rahmat Hidayat"
-                  className="h-12 rounded-xl bg-white border-gray-200"
+                  className="h-12 rounded-xl border-gray-200 bg-white"
                 />
               </Field>
               <Field label="Nomor WhatsApp">
@@ -890,7 +939,7 @@ function PassengerFormList({
                   value={passenger.phone}
                   onChange={(event) => onChange(index, "phone", event.target.value)}
                   placeholder="Contoh: 08123456789"
-                  className="h-12 rounded-xl bg-white border-gray-200"
+                  className="h-12 rounded-xl border-gray-200 bg-white"
                 />
               </Field>
               <Field label="No. Identitas (KTP)">
@@ -898,7 +947,7 @@ function PassengerFormList({
                   value={passenger.identityNumber}
                   onChange={(event) => onChange(index, "identityNumber", event.target.value)}
                   placeholder="Opsional"
-                  className="h-12 rounded-xl bg-white border-gray-200"
+                  className="h-12 rounded-xl border-gray-200 bg-white"
                 />
               </Field>
             </div>
@@ -932,7 +981,7 @@ function ContactForm({
             value={contact.name}
             onChange={(event) => onChange("name", event.target.value)}
             placeholder="Nama lengkap pemesan"
-            className="h-12 rounded-xl bg-gray-50 border-gray-200"
+            className="h-12 rounded-xl border-gray-200 bg-gray-50"
           />
         </Field>
         <Field label="Nomor WhatsApp Pemesan">
@@ -940,7 +989,7 @@ function ContactForm({
             value={contact.phone}
             onChange={(event) => onChange("phone", event.target.value)}
             placeholder="Contoh: 081234567890"
-            className="h-12 rounded-xl bg-gray-50 border-gray-200"
+            className="h-12 rounded-xl border-gray-200 bg-gray-50"
           />
         </Field>
         <Field label="Email Konfirmasi">
@@ -949,12 +998,16 @@ function ContactForm({
             value={contact.email}
             onChange={(event) => onChange("email", event.target.value)}
             placeholder="email@domain.com"
-            className="h-12 rounded-xl bg-gray-50 border-gray-200"
+            className="h-12 rounded-xl border-gray-200 bg-gray-50"
           />
         </Field>
         <Field label="📍 Titik Penjemputan (Pilih di Peta)">
           <LeafletMapPicker
-            value={contact.pickupLat && contact.pickupLng ? { lat: contact.pickupLat, lng: contact.pickupLng, address: contact.pickupAddress } : null}
+            value={
+              contact.pickupLat && contact.pickupLng
+                ? { lat: contact.pickupLat, lng: contact.pickupLng, address: contact.pickupAddress }
+                : null
+            }
             onChange={onMapChange}
             placeholder="Klik untuk pilih titik jemput di peta..."
           />
@@ -964,7 +1017,7 @@ function ContactForm({
             value={contact.dropoffAddress}
             onChange={(event) => onChange("dropoffAddress", event.target.value)}
             placeholder="Lokasi lengkap antar"
-            className="h-12 rounded-xl bg-gray-50 border-gray-200"
+            className="h-12 rounded-xl border-gray-200 bg-gray-50"
           />
         </Field>
         <Field label="Catatan Tambahan Ke Driver" className="md:col-span-2">
@@ -972,7 +1025,7 @@ function ContactForm({
             value={contact.notes}
             onChange={(event) => onChange("notes", event.target.value)}
             placeholder="Patokan rumah, barang bawaan ekstra, dll."
-            className="min-h-24 rounded-xl bg-gray-50 border-gray-200"
+            className="min-h-24 rounded-xl border-gray-200 bg-gray-50"
           />
         </Field>
       </div>
@@ -993,12 +1046,16 @@ function PolicyAgreement({
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
-        className="mt-1 size-5 accent-teal-700 rounded"
+        className="mt-1 size-5 rounded accent-teal-700"
       />
       <span>
-        <span className="block font-bold text-gray-950 text-sm">Persetujuan Kebijakan & Ketentuan</span>
+        <span className="block text-sm font-bold text-gray-950">
+          Persetujuan Kebijakan & Ketentuan
+        </span>
         <span className="mt-1 block text-xs leading-5 text-gray-500">
-          Saya menyetujui bahwa data penumpang di atas benar. Saya menyetujui kebijakan pembatalan & pengembalian dana (*refund*) otomatis yang disesuaikan dengan aturan vendor travel bersangkutan.
+          Saya menyetujui bahwa data penumpang di atas benar. Saya menyetujui kebijakan pembatalan &
+          pengembalian dana (*refund*) otomatis yang disesuaikan dengan aturan vendor travel
+          bersangkutan.
         </span>
       </span>
     </label>
@@ -1041,7 +1098,7 @@ function PriceSummary({
       <div className="mt-5 border-t border-gray-100 pt-5">
         <div className="flex items-end justify-between gap-4">
           <span className="text-sm font-bold text-gray-500">Total Pembayaran</span>
-          <span className="text-3xl font-bold text-[#0D9488] tracking-tight">
+          <span className="text-3xl font-bold tracking-tight text-[#0D9488]">
             {currencyFormatter.format(totalPrice)}
           </span>
         </div>
@@ -1053,7 +1110,7 @@ function PriceSummary({
             type="button"
             disabled={isBooking}
             onClick={onContinue}
-            className="h-12 w-full rounded-xl bg-teal-700 font-bold text-white hover:bg-teal-800 uppercase tracking-widest text-xs shadow-lg shadow-teal-900/10 flex items-center justify-center gap-2"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-teal-700 text-xs font-bold tracking-widest text-white uppercase shadow-lg shadow-teal-900/10 hover:bg-teal-800"
           >
             {isBooking ? (
               <>
@@ -1072,7 +1129,7 @@ function PriceSummary({
             variant="outline"
             disabled={isBooking}
             onClick={onBack}
-            className="h-12 w-full rounded-xl bg-white font-bold text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-white font-bold text-gray-700 hover:bg-gray-50"
           >
             <ArrowLeft size={18} />
             Ubah Data Booking
@@ -1083,7 +1140,7 @@ function PriceSummary({
           type="button"
           disabled={!canContinue}
           onClick={onContinue}
-          className="mt-6 h-12 w-full rounded-xl bg-[#8B5E02] font-bold text-white hover:bg-[#744E02] uppercase tracking-widest text-xs shadow-lg shadow-amber-900/10 flex items-center justify-center gap-2"
+          className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#8B5E02] text-xs font-bold tracking-widest text-white uppercase shadow-lg shadow-amber-900/10 hover:bg-[#744E02]"
         >
           Lanjut ke Checkout
           <ArrowRight size={18} />
@@ -1096,7 +1153,7 @@ function PriceSummary({
 function SummaryLine({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{label}</span>
+      <span className="text-xs font-semibold tracking-wider text-gray-500 uppercase">{label}</span>
       <span className="text-right text-sm font-bold text-gray-950">{value}</span>
     </div>
   );
@@ -1123,7 +1180,7 @@ function Field({
 
 function Amenity({ icon: Icon, label }: { icon: typeof Wifi; label: string }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1.5 text-xs font-bold text-teal-800 border border-teal-100/50">
+    <span className="inline-flex items-center gap-2 rounded-full border border-teal-100/50 bg-teal-50 px-3 py-1.5 text-xs font-bold text-teal-800">
       <Icon size={14} />
       {label}
     </span>
@@ -1132,7 +1189,7 @@ function Amenity({ icon: Icon, label }: { icon: typeof Wifi; label: string }) {
 
 function InfoTile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-gray-50 p-4 border border-gray-100/50">
+    <div className="rounded-2xl border border-gray-100/50 bg-gray-50 p-4">
       <p className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">{label}</p>
       <p className="mt-2 text-sm font-bold text-gray-950">{value}</p>
     </div>
@@ -1150,7 +1207,7 @@ function PointTile({
 }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-gray-100 p-4">
-      <span className={cn("size-2 rounded-full shrink-0", dotClassName)} />
+      <span className={cn("size-2 shrink-0 rounded-full", dotClassName)} />
       <div>
         <p className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">{label}</p>
         <p className="mt-1 text-sm font-bold text-gray-950">{value}</p>
@@ -1159,10 +1216,18 @@ function PointTile({
   );
 }
 
-function LegendItem({ className, label, children }: { className: string; label: string; children?: React.ReactNode }) {
+function LegendItem({
+  className,
+  label,
+  children
+}: {
+  className: string;
+  label: string;
+  children?: React.ReactNode;
+}) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-gray-100 p-3 bg-white shadow-xs">
-      <span className={cn("size-5 rounded-md shrink-0 border border-gray-100", className)}>
+    <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-xs">
+      <span className={cn("size-5 shrink-0 rounded-md border border-gray-100", className)}>
         {children}
       </span>
       <span className="text-[10px] font-bold tracking-wider text-gray-500 uppercase">{label}</span>

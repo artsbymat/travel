@@ -1,0 +1,716 @@
+/* ═══════════════════════════════════════════════════════
+   VENDOR LANDING PAGE — Premium Dynamic Design
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── Animations ─── */
+@keyframes vl-fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes vl-fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes vl-slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes vl-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.04); }
+}
+@keyframes vl-countdownPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.6; }
+}
+@keyframes vl-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ─── Page Container ─── */
+.vl-page {
+  min-height: 100vh;
+  background: #f8fafb;
+  font-family: var(--font-jakarta), 'Inter', system-ui, sans-serif;
+}
+
+/* ─── Hero Section ─── */
+.vl-hero {
+  position: relative;
+  background: linear-gradient(135deg, #0d4f4f 0%, #134e4a 30%, #1a3a5c 70%, #1e293b 100%);
+  padding: 3.5rem 1.5rem 3rem;
+  overflow: hidden;
+  animation: vl-fadeIn 0.6s ease;
+}
+.vl-hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(20, 184, 166, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+.vl-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+.vl-hero-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  position: relative;
+  z-index: 2;
+  animation: vl-fadeInUp 0.7s ease;
+}
+.vl-hero-logo {
+  width: 88px;
+  height: 88px;
+  border-radius: 20px;
+  object-fit: cover;
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.1);
+}
+.vl-hero-logo-placeholder {
+  width: 88px;
+  height: 88px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #14b8a6, #0d9488);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+.vl-hero-info h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 0.3rem;
+  letter-spacing: -0.02em;
+}
+.vl-hero-location {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  margin-bottom: 0.6rem;
+}
+.vl-hero-desc {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+  max-width: 600px;
+  margin: 0;
+}
+.vl-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(20, 184, 166, 0.2);
+  color: #5eead4;
+  margin-top: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.vl-hero-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+.vl-hero-stat {
+  text-align: center;
+}
+.vl-hero-stat-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+  display: block;
+}
+.vl-hero-stat-label {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ─── Content Container ─── */
+.vl-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* ─── Section ─── */
+.vl-section {
+  margin-bottom: 2.5rem;
+  animation: vl-fadeInUp 0.6s ease both;
+}
+.vl-section:nth-child(2) { animation-delay: 0.1s; }
+.vl-section:nth-child(3) { animation-delay: 0.15s; }
+.vl-section:nth-child(4) { animation-delay: 0.2s; }
+.vl-section:nth-child(5) { animation-delay: 0.25s; }
+.vl-section:nth-child(6) { animation-delay: 0.3s; }
+
+.vl-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1.2rem;
+}
+.vl-section-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.vl-section-icon--today {
+  background: linear-gradient(135deg, #ef4444, #f97316);
+}
+.vl-section-icon--upcoming {
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+}
+.vl-section-icon--routes {
+  background: linear-gradient(135deg, #14b8a6, #0d9488);
+}
+.vl-section-icon--fleet {
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+}
+.vl-section-icon--policy {
+  background: linear-gradient(135deg, #64748b, #475569);
+}
+.vl-section-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.vl-section-subtitle {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* ─── Today Trips (Cards with Countdown) ─── */
+.vl-today-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1rem;
+}
+.vl-today-card {
+  background: #fff;
+  border-radius: 18px;
+  border: 1px solid #e2e8f0;
+  padding: 1.25rem;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+.vl-today-card:hover {
+  border-color: #14b8a6;
+  box-shadow: 0 8px 30px rgba(20, 184, 166, 0.1);
+  transform: translateY(-2px);
+}
+.vl-today-card-route {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+.vl-today-card-city {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+.vl-today-card-arrow {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+.vl-today-card-detail {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 500;
+  display: block;
+  margin-top: 0.15rem;
+}
+.vl-today-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.85rem;
+}
+.vl-today-card-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #475569;
+  background: #f1f5f9;
+  padding: 0.3rem 0.65rem;
+  border-radius: 8px;
+}
+.vl-today-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.85rem;
+  border-top: 1px solid #f1f5f9;
+}
+.vl-today-card-price {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0d9488;
+}
+.vl-today-card-price small {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* Countdown */
+.vl-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.35rem 0.7rem;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+.vl-countdown--soon {
+  animation: vl-countdownPulse 1.5s ease infinite;
+  background: #dc2626;
+  color: #fff;
+  border-color: #dc2626;
+}
+.vl-countdown--departed {
+  background: #f1f5f9;
+  color: #94a3b8;
+  border-color: #e2e8f0;
+}
+
+/* CTA button */
+.vl-btn-book {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.55rem 1.1rem;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #0d9488, #14b8a6);
+  color: #fff;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+.vl-btn-book:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(20, 184, 166, 0.3);
+}
+.vl-btn-book--outline {
+  background: transparent;
+  border: 1.5px solid #0d9488;
+  color: #0d9488;
+}
+.vl-btn-book--outline:hover {
+  background: #0d9488;
+  color: #fff;
+}
+
+/* Seats indicator */
+.vl-seats {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.vl-seats--available { color: #16a34a; }
+.vl-seats--low       { color: #f59e0b; }
+.vl-seats--full      { color: #dc2626; }
+
+/* ─── Upcoming Trips (Compact List) ─── */
+.vl-upcoming-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+.vl-upcoming-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #fff;
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+.vl-upcoming-item:hover {
+  border-color: #a5b4fc;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.08);
+}
+.vl-upcoming-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  min-width: 0;
+}
+.vl-upcoming-date {
+  width: 50px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.vl-upcoming-date-day {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #3b82f6;
+  line-height: 1;
+}
+.vl-upcoming-date-month {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.vl-upcoming-info {
+  min-width: 0;
+}
+.vl-upcoming-route {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.vl-upcoming-time {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 500;
+}
+.vl-upcoming-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+.vl-upcoming-price {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #0d9488;
+  white-space: nowrap;
+}
+
+/* ─── Popular Routes ─── */
+.vl-routes-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.vl-route-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #0f172a;
+  transition: all 0.2s ease;
+}
+.vl-route-badge:hover {
+  border-color: #14b8a6;
+  background: #f0fdfa;
+  transform: translateY(-1px);
+}
+.vl-route-badge-arrow {
+  color: #14b8a6;
+  font-weight: 800;
+}
+.vl-route-badge-count {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #fff;
+  background: #14b8a6;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  margin-left: 0.2rem;
+}
+
+/* ─── Fleet Grid ─── */
+.vl-fleet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+.vl-fleet-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+.vl-fleet-card:hover {
+  border-color: #a78bfa;
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.1);
+  transform: translateY(-2px);
+}
+.vl-fleet-card-img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+}
+.vl-fleet-card-img-placeholder {
+  width: 100%;
+  height: 160px;
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+}
+.vl-fleet-card-body {
+  padding: 1rem 1.1rem;
+}
+.vl-fleet-card-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.3rem;
+}
+.vl-fleet-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* ─── Policies ─── */
+.vl-policies {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.vl-policy-item {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.vl-policy-item:hover {
+  border-color: #94a3b8;
+}
+.vl-policy-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.1rem;
+  cursor: pointer;
+  user-select: none;
+}
+.vl-policy-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+.vl-policy-type {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.vl-policy-toggle {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  transition: transform 0.25s ease;
+}
+.vl-policy-toggle--open {
+  transform: rotate(180deg);
+}
+.vl-policy-content {
+  padding: 0 1.1rem 1rem;
+  font-size: 0.8rem;
+  color: #475569;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+/* ─── Empty State ─── */
+.vl-empty {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  color: #94a3b8;
+  background: #fff;
+  border-radius: 16px;
+  border: 1px dashed #cbd5e1;
+}
+.vl-empty-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+.vl-empty-text {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+/* ─── Loading Skeleton ─── */
+.vl-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 1rem;
+}
+.vl-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 4px solid #e2e8f0;
+  border-top-color: #14b8a6;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.vl-loading-text {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ─── 404 State ─── */
+.vl-notfound {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 0.75rem;
+  text-align: center;
+  padding: 2rem;
+}
+.vl-notfound-icon {
+  font-size: 3rem;
+}
+.vl-notfound-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+.vl-notfound-desc {
+  font-size: 0.88rem;
+  color: #64748b;
+  max-width: 400px;
+}
+
+/* ─── Contact Bar ─── */
+.vl-contact-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+.vl-contact-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(4px);
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .vl-hero {
+    padding: 2rem 1rem;
+  }
+  .vl-hero-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .vl-hero-info h1 {
+    font-size: 1.5rem;
+  }
+  .vl-hero-logo,
+  .vl-hero-logo-placeholder {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    font-size: 1.6rem;
+  }
+  .vl-content {
+    padding: 1.5rem 1rem 3rem;
+  }
+  .vl-today-grid {
+    grid-template-columns: 1fr;
+  }
+  .vl-fleet-grid {
+    grid-template-columns: 1fr;
+  }
+  .vl-upcoming-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .vl-upcoming-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

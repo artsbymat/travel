@@ -93,13 +93,16 @@ function SearchTicketContent() {
   const [errorSearch, setErrorSearch] = useState<string | null>(null);
 
   // Cancellation (Refund Submission Form)
-  const [refundMethod, setRefundMethod] = useState<"BANK_TRANSFER" | "CASH_PICKUP">("BANK_TRANSFER");
+  const [refundMethod, setRefundMethod] = useState<"BANK_TRANSFER" | "CASH_PICKUP">(
+    "BANK_TRANSFER"
+  );
   const [bankName, setBankName] = useState("");
   const [bankAccountNo, setBankAccountNo] = useState("");
   const [bankAccountName, setBankAccountName] = useState("");
   const [cancelReason, setCancelReason] = useState("");
   const [submittingCancel, setSubmittingCancel] = useState(false);
   const [cancelSuccess, setCancelSuccess] = useState(false);
+  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
 
   // Rating & Review Panel State
   const [reviewRating, setReviewRating] = useState(5);
@@ -609,7 +612,7 @@ function SearchTicketContent() {
                               </div>
                             </div>
                             <p className="text-sm font-bold text-slate-800">
-                              &quot;{userReview.comment || "Bintang " + userReview.rating}"
+                              &quot;{userReview.comment || "Bintang " + userReview.rating}&quot;
                             </p>
                             <p className="text-[10px] tracking-wide text-slate-400">
                               Dikirim pada{" "}
@@ -749,209 +752,92 @@ function SearchTicketContent() {
                     </section>
 
                     {/* Cancellation and dynamic refund submission form */}
-                    {refundCalc && refundCalc.eligible && (() => {
-                      let isVendorCancelled = false;
-                      if (booking) {
-                        let isVendorCancelledByNotes = false;
-                        if (booking.notes) {
-                          try {
-                            const parsed = JSON.parse(booking.notes);
-                            if (parsed.cancelledBy === "VENDOR" || parsed.cancelReason?.toLowerCase().includes("armada") || parsed.cancelReason?.toLowerCase().includes("dibatalkan otomatis")) {
-                              isVendorCancelledByNotes = true;
-                            }
-                          } catch (e) {
-                            if (booking.notes.includes("Armada") || booking.notes.includes("dibatalkan otomatis") || booking.notes.includes("VENDOR")) {
-                              isVendorCancelledByNotes = true;
+                    {refundCalc &&
+                      refundCalc.eligible &&
+                      (() => {
+                        let isVendorCancelled = false;
+                        if (booking) {
+                          let isVendorCancelledByNotes = false;
+                          if (booking.notes) {
+                            try {
+                              const parsed = JSON.parse(booking.notes);
+                              if (
+                                parsed.cancelledBy === "VENDOR" ||
+                                parsed.cancelReason?.toLowerCase().includes("armada") ||
+                                parsed.cancelReason?.toLowerCase().includes("dibatalkan otomatis")
+                              ) {
+                                isVendorCancelledByNotes = true;
+                              }
+                            } catch (e) {
+                              if (
+                                booking.notes.includes("Armada") ||
+                                booking.notes.includes("dibatalkan otomatis") ||
+                                booking.notes.includes("VENDOR")
+                              ) {
+                                isVendorCancelledByNotes = true;
+                              }
                             }
                           }
+                          const isTripCancelled =
+                            booking.trip?.status?.toLowerCase() === "cancelled";
+                          isVendorCancelled =
+                            (isTripCancelled || isVendorCancelledByNotes) &&
+                            booking.paymentStatus === "PAID" &&
+                            (!booking.refunds || booking.refunds.length === 0);
                         }
-                        const isTripCancelled = booking.trip?.status?.toLowerCase() === "cancelled";
-                        isVendorCancelled = (isTripCancelled || isVendorCancelledByNotes) && booking.paymentStatus === "PAID" && (!booking.refunds || booking.refunds.length === 0);
-                      }
-                      
-                      return (
-                        <section className={`space-y-4 rounded-3xl border p-6 ${
-                          isVendorCancelled 
-                            ? "border-amber-100 bg-amber-50/15" 
-                            : "border-rose-100 bg-rose-50/30"
-                        }`}>
-                          <div className="flex items-start gap-3">
-                            <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${
-                              isVendorCancelled 
-                                ? "bg-amber-100 text-amber-700" 
-                                : "bg-rose-100 text-rose-700"
-                            }`}>
-                              {isVendorCancelled ? (
-                                <ShieldCheck className="h-5 w-5" />
-                              ) : (
-                                <Trash2 className="h-5 w-5" />
-                              )}
-                            </div>
-                            <div>
-                              <h3 className="text-sm font-bold text-slate-950">
-                                {isVendorCancelled ? "Lengkapi Data Refund" : "Ajukan Pembatalan"}
-                              </h3>
-                              <p className="mt-0.5 text-xs text-slate-500">
-                                {isVendorCancelled 
-                                  ? "Jadwal dibatalkan oleh pihak vendor" 
-                                  : "Sesuai kebijakan vendor penjemputan."}
-                              </p>
-                            </div>
-                          </div>
 
-                          {/* Calculated refund details */}
-                          <div className={`space-y-2.5 rounded-2xl border bg-white p-4 text-xs ${
-                            isVendorCancelled ? "border-amber-100" : "border-rose-100"
-                          }`}>
-                            <div className="flex justify-between">
-                              <span className="font-bold text-slate-400 uppercase">Batas Waktu:</span>
-                              <span className="font-bold text-slate-800">
-                                {isVendorCancelled 
-                                  ? "Bebas (Dibatalkan Vendor)" 
-                                  : `${refundCalc.hoursBeforeDeparture} jam sebelum berangkat`}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="font-bold text-slate-400 uppercase">
-                                Persentase Refund:
-                              </span>
-                              <span className="font-mono text-sm font-bold text-emerald-700">
-                                {refundCalc.refundPercentage}%
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="font-bold text-slate-400 uppercase">
-                                Admin Penanganan:
-                              </span>
-                              <span className="font-bold text-slate-800">
-                                {refundCalc.adminFee === 0 
-                                  ? "Gratis / Rp 0" 
-                                  : currencyFormatter.format(refundCalc.adminFee)}
-                              </span>
-                            </div>
-                            <Separator />
-                            <div className={`flex justify-between font-bold ${
-                              isVendorCancelled ? "text-amber-800" : "text-rose-800"
-                            }`}>
-                              <span className="uppercase">Dana Kembali:</span>
-                              <span className={`text-base font-bold ${
-                                isVendorCancelled ? "text-amber-700" : "text-rose-700"
-                              }`}>
-                                {currencyFormatter.format(refundCalc.finalAmount)}
-                              </span>
-                            </div>
-                          </div>
-
-                          {cancelSuccess ? (
-                            <div className="flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-xs font-bold text-emerald-800">
-                              <Check className="h-4 w-4 stroke-3" />
-                              Pembatalan sukses! Mengembalikan saldo...
-                            </div>
-                          ) : (
-                            <div className="space-y-3 pt-2">
-                              <h4 className={`text-[10px] font-bold tracking-widest uppercase ${
-                                isVendorCancelled ? "text-amber-800" : "text-rose-800"
-                              }`}>
-                                Metode Pengembalian Dana
-                              </h4>
-                              
-                              <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
-                                <button
-                                  type="button"
-                                  onClick={() => setRefundMethod("BANK_TRANSFER")}
-                                  className={`rounded-lg py-1.5 text-center text-[10px] font-bold transition-all ${
-                                    refundMethod === "BANK_TRANSFER"
-                                      ? "bg-white text-slate-900 shadow-sm"
-                                      : "text-slate-500 hover:text-slate-800"
-                                  }`}
-                                >
-                                  🏦 Transfer Bank
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setRefundMethod("CASH_PICKUP")}
-                                  className={`rounded-lg py-1.5 text-center text-[10px] font-bold transition-all ${
-                                    refundMethod === "CASH_PICKUP"
-                                      ? "bg-white text-slate-900 shadow-sm"
-                                      : "text-slate-500 hover:text-slate-800"
-                                  }`}
-                                >
-                                  💵 Tunai (Cash Pickup)
-                                </button>
-                              </div>
-
-                              <div className="space-y-2">
-                                {refundMethod === "BANK_TRANSFER" && (
-                                  <>
-                                    <Input
-                                      placeholder="Nama Bank (misal: BCA, Mandiri)"
-                                      value={bankName}
-                                      onChange={(e) => setBankName(e.target.value)}
-                                      className={`h-9 rounded-xl bg-white text-xs ${
-                                        isVendorCancelled ? "border-amber-100 focus:border-amber-400" : "border-rose-100 focus:border-rose-400"
-                                      }`}
-                                    />
-                                    <Input
-                                      placeholder="Nomor Rekening"
-                                      value={bankAccountNo}
-                                      onChange={(e) => setBankAccountNo(e.target.value)}
-                                      className={`h-9 rounded-xl bg-white text-xs ${
-                                        isVendorCancelled ? "border-amber-100 focus:border-amber-400" : "border-rose-100 focus:border-rose-400"
-                                      }`}
-                                    />
-                                    <Input
-                                      placeholder="Nama Pemilik Rekening"
-                                      value={bankAccountName}
-                                      onChange={(e) => setBankAccountName(e.target.value)}
-                                      className={`h-9 rounded-xl bg-white text-xs ${
-                                        isVendorCancelled ? "border-amber-100 focus:border-amber-400" : "border-rose-100 focus:border-rose-400"
-                                      }`}
-                                    />
-                                  </>
-                                )}
-
-                                {refundMethod === "CASH_PICKUP" && (
-                                  <div className="rounded-xl border border-amber-100 bg-amber-50/50 p-3 text-[10px] text-amber-800 font-medium leading-relaxed">
-                                    💡 <strong>Refund Tunai:</strong> Dana Anda dapat diambil langsung di counter utama vendor setelah pengajuan disetujui oleh Owner/Staff. Harap tunjukkan kode booking ini saat pengambilan.
-                                  </div>
-                                )}
-
-                                <Textarea
-                                  placeholder={isVendorCancelled ? "Alasan refund / Catatan tambahan (Opsional)" : "Alasan pembatalan (Opsional)"}
-                                  value={cancelReason}
-                                  onChange={(e) => setCancelReason(e.target.value)}
-                                  className={`min-h-12 rounded-xl bg-white text-xs ${
-                                    isVendorCancelled ? "border-amber-100 focus:border-amber-400" : "border-rose-100 focus:border-rose-400"
-                                  }`}
-                                />
-                              </div>
-
-                              <Button
-                                onClick={handleCancelBooking}
-                                disabled={
-                                  submittingCancel || 
-                                  (refundMethod === "BANK_TRANSFER" && (!bankName || !bankAccountNo || !bankAccountName))
-                                }
-                                className={`flex h-11 w-full items-center justify-center gap-2 rounded-xl text-xs font-bold tracking-wider text-white uppercase shadow-md ${
-                                  isVendorCancelled 
-                                    ? "bg-amber-600 hover:bg-amber-700 shadow-amber-900/10" 
-                                    : "bg-rose-600 hover:bg-rose-700 shadow-rose-900/10"
+                        return (
+                          <section
+                            className={`space-y-4 rounded-3xl border p-6 ${
+                              isVendorCancelled
+                                ? "border-amber-100 bg-amber-50/15"
+                                : "border-rose-100 bg-rose-50/30"
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div
+                                className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${
+                                  isVendorCancelled
+                                    ? "bg-amber-100 text-amber-700"
+                                    : "bg-rose-100 text-rose-700"
                                 }`}
                               >
-                                {submittingCancel ? (
-                                  <>
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                    Memproses Refund...
-                                  </>
+                                {isVendorCancelled ? (
+                                  <ShieldCheck className="h-5 w-5" />
                                 ) : (
-                                  isVendorCancelled ? "💸 Ajukan Klaim Refund" : "💸 Batalkan & Ajukan Refund"
+                                  <Trash2 className="h-5 w-5" />
                                 )}
-                              </Button>
+                              </div>
+                              <div className="flex-1">
+                                <h3 className="text-sm font-bold text-slate-950">
+                                  {isVendorCancelled ? "Lengkapi Data Refund" : "Ajukan Pembatalan"}
+                                </h3>
+                                <p className="mt-0.5 text-xs text-slate-500">
+                                  {isVendorCancelled
+                                    ? "Jadwal dibatalkan oleh pihak vendor"
+                                    : "Sesuai kebijakan vendor penjemputan."}
+                                </p>
+                              </div>
                             </div>
-                          )}
-                        </section>
-                      );
-                    })()}
+
+                            <Button
+                              onClick={() => {
+                                setCancelSuccess(false);
+                                setIsRefundModalOpen(true);
+                              }}
+                              className={`flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl text-xs font-bold tracking-wider text-white uppercase shadow-md ${
+                                isVendorCancelled
+                                  ? "bg-amber-600 shadow-amber-900/10 hover:bg-amber-700"
+                                  : "bg-rose-600 shadow-rose-900/10 hover:bg-rose-700"
+                              }`}
+                            >
+                              {isVendorCancelled
+                                ? "💸 Isi Data Refund"
+                                : "💸 Batalkan & Ajukan Refund"}
+                            </Button>
+                          </section>
+                        );
+                      })()}
 
                     {/* Refund Status Card (Visible when there is already a refund request submitted) */}
                     {booking.refunds && booking.refunds.length > 0 && (
@@ -961,8 +847,10 @@ function SearchTicketContent() {
                             <Clock3 className="h-5 w-5" />
                           </div>
                           <div>
-                            <h3 className="text-sm font-bold text-slate-950">Status Pengembalian</h3>
-                            <p className="mt-0.5 text-xs text-slate-500 font-mono">
+                            <h3 className="text-sm font-bold text-slate-950">
+                              Status Pengembalian
+                            </h3>
+                            <p className="mt-0.5 font-mono text-xs text-slate-500">
                               {booking.refunds[0].refundCode}
                             </p>
                           </div>
@@ -970,16 +858,16 @@ function SearchTicketContent() {
 
                         <div className="space-y-3 rounded-2xl border border-amber-100 bg-white p-4 text-xs">
                           {/* Status Badge */}
-                          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                             <span className="font-semibold text-slate-500">Status Refund</span>
                             {booking.refunds[0].status === "PENDING" ? (
                               <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-700">
-                                <Clock3 size={12} className="text-amber-600 animate-pulse" />
+                                <Clock3 size={12} className="animate-pulse text-amber-600" />
                                 Menunggu Verifikasi
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
-                                <Check size={12} className="text-emerald-600 stroke-3" />
+                                <Check size={12} className="stroke-3 text-emerald-600" />
                                 Dana Dikembalikan
                               </span>
                             )}
@@ -990,25 +878,34 @@ function SearchTicketContent() {
                             <div className="flex justify-between">
                               <span>Metode Pengembalian</span>
                               <span className="font-bold text-slate-900">
-                                {booking.refunds[0].refundMethod === "CASH_PICKUP" ? "💵 TUNAI (CASH)" : "🏦 TRANSFER BANK"}
+                                {booking.refunds[0].refundMethod === "CASH_PICKUP"
+                                  ? "💵 TUNAI (CASH)"
+                                  : "🏦 TRANSFER BANK"}
                               </span>
                             </div>
 
                             {booking.refunds[0].refundMethod === "BANK_TRANSFER" && (
-                              <div className="rounded-xl bg-slate-50 p-2.5 space-y-1 text-[11px] text-slate-700 border border-slate-100">
-                                <p className="font-semibold text-slate-900">{booking.refunds[0].customerBankName}</p>
-                                <p className="font-mono">{booking.refunds[0].customerBankAccount}</p>
-                                <p className="text-slate-500">a.n {booking.refunds[0].customerBankAccountName}</p>
+                              <div className="space-y-1 rounded-xl border border-slate-100 bg-slate-50 p-2.5 text-[11px] text-slate-700">
+                                <p className="font-semibold text-slate-900">
+                                  {booking.refunds[0].customerBankName}
+                                </p>
+                                <p className="font-mono">
+                                  {booking.refunds[0].customerBankAccount}
+                                </p>
+                                <p className="text-slate-500">
+                                  a.n {booking.refunds[0].customerBankAccountName}
+                                </p>
                               </div>
                             )}
 
                             {booking.refunds[0].refundMethod === "CASH_PICKUP" && (
-                              <div className="rounded-xl bg-amber-50/50 p-2.5 text-[11px] text-amber-800 border border-amber-100/50 leading-relaxed font-medium">
-                                📍 Uang tunai dapat diambil di counter fisik setelah disetujui. Bawa kode booking ini.
+                              <div className="rounded-xl border border-amber-100/50 bg-amber-50/50 p-2.5 text-[11px] leading-relaxed font-medium text-amber-800">
+                                📍 Uang tunai dapat diambil di counter fisik setelah disetujui. Bawa
+                                kode booking ini.
                               </div>
                             )}
 
-                            <div className="flex justify-between pt-1 border-t border-slate-100">
+                            <div className="flex justify-between border-t border-slate-100 pt-1">
                               <span>Porsi Refund</span>
                               <span className="font-semibold text-slate-900">
                                 {currencyFormatter.format(booking.refunds[0].refundAmount)}
@@ -1022,7 +919,7 @@ function SearchTicketContent() {
                               </span>
                             </div>
 
-                            <div className="flex justify-between pt-2 border-t border-slate-100 font-bold text-slate-900 text-sm">
+                            <div className="flex justify-between border-t border-slate-100 pt-2 text-sm font-bold text-slate-900">
                               <span>Total Dana Kembali</span>
                               <span className="text-teal-700">
                                 {currencyFormatter.format(booking.refunds[0].finalAmount)}
@@ -1032,8 +929,9 @@ function SearchTicketContent() {
                         </div>
 
                         {booking.refunds[0].status === "PENDING" && (
-                          <div className="rounded-2xl border border-blue-100 bg-blue-50/30 p-3 text-[11px] text-blue-800 leading-relaxed">
-                            💡 <strong>Catatan:</strong> Refund Anda sedang ditinjau oleh staff keuangan vendor. Proses persetujuan membutuhkan waktu sekitar 1x24 jam.
+                          <div className="rounded-2xl border border-blue-100 bg-blue-50/30 p-3 text-[11px] leading-relaxed text-blue-800">
+                            💡 <strong>Catatan:</strong> Refund Anda sedang ditinjau oleh staff
+                            keuangan vendor. Proses persetujuan membutuhkan waktu sekitar 1x24 jam.
                           </div>
                         )}
                       </section>
@@ -1047,6 +945,391 @@ function SearchTicketContent() {
           </div>
         </div>
       </section>
+
+      {/* Refund Modal Overlay */}
+      {isRefundModalOpen && refundCalc && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 backdrop-blur-sm transition-all duration-300">
+          <div className="animate-in fade-in zoom-in mx-4 flex max-h-[90vh] w-full max-w-md flex-col rounded-3xl border border-slate-100 bg-white p-6 text-left shadow-2xl duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div
+                  className={cn(
+                    "flex size-10 items-center justify-center rounded-xl",
+                    booking &&
+                      (booking.trip?.status?.toLowerCase() === "cancelled" ||
+                        (booking.notes &&
+                          (booking.notes.includes("Armada") ||
+                            booking.notes.includes("dibatalkan otomatis") ||
+                            booking.notes.includes("VENDOR"))))
+                      ? "bg-amber-50 text-amber-700"
+                      : "bg-rose-50 text-rose-700"
+                  )}
+                >
+                  {booking &&
+                  (booking.trip?.status?.toLowerCase() === "cancelled" ||
+                    (booking.notes &&
+                      (booking.notes.includes("Armada") ||
+                        booking.notes.includes("dibatalkan otomatis") ||
+                        booking.notes.includes("VENDOR")))) ? (
+                    <ShieldCheck className="h-5 w-5" />
+                  ) : (
+                    <Trash2 className="h-5 w-5" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-950">
+                    {booking &&
+                    (booking.trip?.status?.toLowerCase() === "cancelled" ||
+                      (booking.notes &&
+                        (booking.notes.includes("Armada") ||
+                          booking.notes.includes("dibatalkan otomatis") ||
+                          booking.notes.includes("VENDOR"))))
+                      ? "Data Refund Vendor"
+                      : "Form Pembatalan Tiket"}
+                  </h3>
+                  <p className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                    Refund Perjalanan
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  if (!submittingCancel) {
+                    setIsRefundModalOpen(false);
+                    setCancelSuccess(false);
+                  }
+                }}
+                className="cursor-pointer p-1 text-slate-400 transition-colors hover:text-slate-600"
+                aria-label="Tutup"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 space-y-4 overflow-y-auto py-4 pr-1">
+              {/* Calculated refund details */}
+              {(() => {
+                let isVendorCancelled = false;
+                if (booking) {
+                  let isVendorCancelledByNotes = false;
+                  if (booking.notes) {
+                    try {
+                      const parsed = JSON.parse(booking.notes);
+                      if (
+                        parsed.cancelledBy === "VENDOR" ||
+                        parsed.cancelReason?.toLowerCase().includes("armada") ||
+                        parsed.cancelReason?.toLowerCase().includes("dibatalkan otomatis")
+                      ) {
+                        isVendorCancelledByNotes = true;
+                      }
+                    } catch (e) {
+                      if (
+                        booking.notes.includes("Armada") ||
+                        booking.notes.includes("dibatalkan otomatis") ||
+                        booking.notes.includes("VENDOR")
+                      ) {
+                        isVendorCancelledByNotes = true;
+                      }
+                    }
+                  }
+                  const isTripCancelled = booking.trip?.status?.toLowerCase() === "cancelled";
+                  isVendorCancelled =
+                    (isTripCancelled || isVendorCancelledByNotes) &&
+                    booking.paymentStatus === "PAID" &&
+                    (!booking.refunds || booking.refunds.length === 0);
+                }
+
+                return (
+                  <>
+                    <div
+                      className={cn(
+                        "space-y-2.5 rounded-2xl border bg-slate-50/50 p-4 text-xs",
+                        isVendorCancelled ? "border-amber-100" : "border-rose-100"
+                      )}
+                    >
+                      <div className="flex justify-between">
+                        <span className="font-bold text-slate-400 uppercase">Batas Waktu:</span>
+                        <span className="font-bold text-slate-800">
+                          {isVendorCancelled
+                            ? "Bebas (Dibatalkan Vendor)"
+                            : `${refundCalc.hoursBeforeDeparture} jam sebelum berangkat`}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-bold text-slate-400 uppercase">
+                          Persentase Refund:
+                        </span>
+                        <span className="font-mono text-sm font-bold text-emerald-700">
+                          {refundCalc.refundPercentage}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-bold text-slate-400 uppercase">
+                          Admin Penanganan:
+                        </span>
+                        <span className="font-bold text-slate-800">
+                          {refundCalc.adminFee === 0
+                            ? "Gratis / Rp 0"
+                            : currencyFormatter.format(refundCalc.adminFee)}
+                        </span>
+                      </div>
+                      <Separator />
+                      <div
+                        className={cn(
+                          "flex justify-between font-bold",
+                          isVendorCancelled ? "text-amber-800" : "text-rose-800"
+                        )}
+                      >
+                        <span className="uppercase">Dana Kembali:</span>
+                        <span
+                          className={cn(
+                            "text-base font-bold",
+                            isVendorCancelled ? "text-amber-700" : "text-rose-700"
+                          )}
+                        >
+                          {currencyFormatter.format(refundCalc.finalAmount)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {cancelSuccess ? (
+                      <div className="flex animate-pulse items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-xs font-bold text-emerald-800">
+                        <Check className="h-4 w-4 stroke-3" />
+                        Pembatalan sukses! Mengembalikan saldo...
+                      </div>
+                    ) : (
+                      <div className="space-y-3 pt-1">
+                        <h4
+                          className={cn(
+                            "text-[10px] font-bold tracking-widest uppercase",
+                            isVendorCancelled ? "text-amber-800" : "text-rose-800"
+                          )}
+                        >
+                          Metode Pengembalian Dana
+                        </h4>
+
+                        <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
+                          <button
+                            type="button"
+                            onClick={() => setRefundMethod("BANK_TRANSFER")}
+                            className={cn(
+                              "cursor-pointer rounded-lg py-1.5 text-center text-[10px] font-bold transition-all",
+                              refundMethod === "BANK_TRANSFER"
+                                ? "bg-white text-slate-900 shadow-sm"
+                                : "text-slate-500 hover:text-slate-800"
+                            )}
+                          >
+                            🏦 Transfer Bank
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setRefundMethod("CASH_PICKUP")}
+                            className={cn(
+                              "cursor-pointer rounded-lg py-1.5 text-center text-[10px] font-bold transition-all",
+                              refundMethod === "CASH_PICKUP"
+                                ? "bg-white text-slate-900 shadow-sm"
+                                : "text-slate-500 hover:text-slate-800"
+                            )}
+                          >
+                            💵 Tunai (Cash Pickup)
+                          </button>
+                        </div>
+
+                        <div className="space-y-2.5">
+                          {refundMethod === "BANK_TRANSFER" && (
+                            <>
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">
+                                  Nama Bank
+                                </label>
+                                <Input
+                                  placeholder="Nama Bank (misal: BCA, Mandiri)"
+                                  value={bankName}
+                                  onChange={(e) => setBankName(e.target.value)}
+                                  className={cn(
+                                    "h-9 rounded-xl border-slate-200 bg-slate-50/50 text-xs transition-colors focus:bg-white"
+                                  )}
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">
+                                  Nomor Rekening
+                                </label>
+                                <Input
+                                  placeholder="Nomor Rekening"
+                                  value={bankAccountNo}
+                                  onChange={(e) => setBankAccountNo(e.target.value)}
+                                  className={cn(
+                                    "h-9 rounded-xl border-slate-200 bg-slate-50/50 text-xs transition-colors focus:bg-white"
+                                  )}
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">
+                                  Nama Pemilik Rekening
+                                </label>
+                                <Input
+                                  placeholder="Nama Pemilik Rekening"
+                                  value={bankAccountName}
+                                  onChange={(e) => setBankAccountName(e.target.value)}
+                                  className={cn(
+                                    "h-9 rounded-xl border-slate-200 bg-slate-50/50 text-xs transition-colors focus:bg-white"
+                                  )}
+                                />
+                              </div>
+                            </>
+                          )}
+
+                          {refundMethod === "CASH_PICKUP" && (
+                            <div className="rounded-xl border border-amber-100 bg-amber-50/50 p-3 text-[10px] leading-relaxed font-medium font-semibold text-amber-800">
+                              💡 <strong>Refund Tunai:</strong> Dana Anda dapat diambil langsung di
+                              counter utama vendor setelah pengajuan disetujui oleh Owner/Staff.
+                              Harap tunjukkan kode booking ini saat pengambilan.
+                            </div>
+                          )}
+
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase">
+                              Alasan Refund
+                            </label>
+                            <Textarea
+                              placeholder={
+                                isVendorCancelled
+                                  ? "Alasan refund / Catatan tambahan (Opsional)"
+                                  : "Alasan pembatalan (Opsional)"
+                              }
+                              value={cancelReason}
+                              onChange={(e) => setCancelReason(e.target.value)}
+                              className={cn(
+                                "min-h-12 rounded-xl border-slate-200 bg-slate-50/50 text-xs transition-colors focus:bg-white"
+                              )}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* Footer / Submit Button */}
+            {!cancelSuccess && (
+              <div className="flex gap-3 border-t border-slate-100 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsRefundModalOpen(false)}
+                  disabled={submittingCancel}
+                  className="w-1/3 cursor-pointer rounded-xl border-slate-200 text-xs font-bold text-slate-600 uppercase hover:bg-slate-50"
+                >
+                  Batal
+                </Button>
+                <Button
+                  onClick={async () => {
+                    await handleCancelBooking();
+                    // Close the modal upon success
+                    setTimeout(() => {
+                      setIsRefundModalOpen(false);
+                    }, 2000);
+                  }}
+                  disabled={
+                    submittingCancel ||
+                    (refundMethod === "BANK_TRANSFER" &&
+                      (!bankName || !bankAccountNo || !bankAccountName))
+                  }
+                  className={cn(
+                    "flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl text-xs font-bold tracking-wider text-white uppercase shadow-md",
+                    (() => {
+                      let isVendorCancelled = false;
+                      if (booking) {
+                        let isVendorCancelledByNotes = false;
+                        if (booking.notes) {
+                          try {
+                            const parsed = JSON.parse(booking.notes);
+                            if (
+                              parsed.cancelledBy === "VENDOR" ||
+                              parsed.cancelReason?.toLowerCase().includes("armada") ||
+                              parsed.cancelReason?.toLowerCase().includes("dibatalkan otomatis")
+                            ) {
+                              isVendorCancelledByNotes = true;
+                            }
+                          } catch (e) {
+                            if (
+                              booking.notes.includes("Armada") ||
+                              booking.notes.includes("dibatalkan otomatis") ||
+                              booking.notes.includes("VENDOR")
+                            ) {
+                              isVendorCancelledByNotes = true;
+                            }
+                          }
+                        }
+                        const isTripCancelled = booking.trip?.status?.toLowerCase() === "cancelled";
+                        isVendorCancelled =
+                          (isTripCancelled || isVendorCancelledByNotes) &&
+                          booking.paymentStatus === "PAID" &&
+                          (!booking.refunds || booking.refunds.length === 0);
+                      }
+                      return isVendorCancelled
+                        ? "bg-amber-600 shadow-amber-900/10 hover:bg-amber-700"
+                        : "bg-rose-600 shadow-rose-900/10 hover:bg-rose-700";
+                    })()
+                  )}
+                >
+                  {submittingCancel ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Memproses...
+                    </>
+                  ) : (
+                    (() => {
+                      let isVendorCancelled = false;
+                      if (booking) {
+                        let isVendorCancelledByNotes = false;
+                        if (booking.notes) {
+                          try {
+                            const parsed = JSON.parse(booking.notes);
+                            if (
+                              parsed.cancelledBy === "VENDOR" ||
+                              parsed.cancelReason?.toLowerCase().includes("armada") ||
+                              parsed.cancelReason?.toLowerCase().includes("dibatalkan otomatis")
+                            ) {
+                              isVendorCancelledByNotes = true;
+                            }
+                          } catch (e) {
+                            if (
+                              booking.notes.includes("Armada") ||
+                              booking.notes.includes("dibatalkan otomatis") ||
+                              booking.notes.includes("VENDOR")
+                            ) {
+                              isVendorCancelledByNotes = true;
+                            }
+                          }
+                        }
+                        const isTripCancelled = booking.trip?.status?.toLowerCase() === "cancelled";
+                        isVendorCancelled =
+                          (isTripCancelled || isVendorCancelledByNotes) &&
+                          booking.paymentStatus === "PAID" &&
+                          (!booking.refunds || booking.refunds.length === 0);
+                      }
+                      return isVendorCancelled ? "Ajukan Refund" : "Batalkan & Refund";
+                    })()
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

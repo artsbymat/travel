@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@/generated/prisma/client";
-import { PolicyType } from "@/generated/prisma/enums";
+import { PolicyType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
     isOwnerAuthFailure,

@@ -7,7 +7,7 @@ import {
     requireOwner,
 } from "@/lib/owner-auth";
 import type { OwnerVendorUpdatePayload } from "@/types/owner-vendor-api";
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@prisma/client";
 
 const VENDOR_SELECT = {
     id: true,

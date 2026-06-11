@@ -1,4 +1,4 @@
-import type { PolicyType } from "@/generated/prisma/enums";
+import type { PolicyType } from "@prisma/client";
 
 export interface OwnerVendorRecord {
     id: string;

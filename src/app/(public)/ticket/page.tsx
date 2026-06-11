@@ -76,6 +76,15 @@ const currencyFormatter = new Intl.NumberFormat("id-ID", {
   minimumFractionDigits: 0
 });
 
+const getTicketQrValue = (code: string) => {
+  const origin = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const url = new URL("/ticket", origin);
+
+  url.searchParams.set("code", code);
+
+  return url.toString();
+};
+
 function SearchTicketContent() {
   const searchParams = useSearchParams();
 
@@ -234,7 +243,7 @@ function SearchTicketContent() {
   };
 
   const activeStatus = booking ? statuses.find((status) => status.key === booking.status) : null;
-  const ticketQrValue = booking ? searchParams.get("code") : "";
+  const ticketQrValue = booking ? getTicketQrValue(booking.code) : "";
 
   const tripDetails = booking
     ? [

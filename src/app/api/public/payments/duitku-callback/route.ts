@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { validateDuitkuCallbackSignature } from "@/lib/duitku";
+import { sendTicketEmail } from "@/lib/ticket-email";
 
 export async function POST(req: NextRequest) {
     try {
@@ -66,6 +67,7 @@ export async function POST(req: NextRequest) {
                         vehicle: true
                     }
                 },
+                seats: true,
                 paymentTransactions: true
             }
         });
@@ -231,6 +233,11 @@ export async function POST(req: NextRequest) {
             });
 
             console.log(`[DUITKU CALLBACK] Verified payment bookkeeping completed for ${merchantOrderId}.`);
+            try {
+                await sendTicketEmail(booking);
+            } catch (mailError) {
+                console.error("[DUITKU CALLBACK] Ticket email error:", mailError);
+            }
             return new NextResponse("OK", { status: 200 }); // Duitku expects exactly "OK" string response
         } else {
             // 4. Handle expired/failed transaction status (resultCode !== "00")

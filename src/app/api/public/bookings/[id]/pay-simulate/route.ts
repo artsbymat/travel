@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { sendTicketEmail } from "@/lib/ticket-email";
 
 export async function POST(
   req: NextRequest,
@@ -18,6 +19,7 @@ export async function POST(
             vehicle: true
           }
         },
+        seats: true,
         paymentTransactions: true
       }
     });
@@ -155,9 +157,32 @@ export async function POST(
       return updated;
     });
 
-    return NextResponse.json({ success: true, booking: updatedBooking });
-  } catch (error: any) {
+    let ticketEmailSent = false;
+    let ticketEmailWarning: string | undefined;
+
+    try {
+      const emailResult = await sendTicketEmail(booking);
+      ticketEmailSent = emailResult.sent;
+      ticketEmailWarning = emailResult.warning;
+    } catch (mailError) {
+      console.error("[pay-simulate] Ticket email error:", mailError);
+      ticketEmailWarning = "Pembayaran berhasil, tetapi email tiket gagal dikirim.";
+    }
+
+    return NextResponse.json({
+      success: true,
+      booking: updatedBooking,
+      ticketEmailSent,
+      warning: ticketEmailWarning
+    });
+  } catch (error: unknown) {
     console.error("Payment simulation transaction error:", error);
-    return NextResponse.json({ error: error.message || "Gagal melakukan simulasi pembayaran." }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error ? error.message : "Gagal melakukan simulasi pembayaran."
+      },
+      { status: 500 }
+    );
   }
 }

@@ -8,7 +8,7 @@ import {
     Car, LogOut, Menu, X,
     LayoutDashboard, Users, Building2, Truck, BarChart3,
     UserCog, MapPin, Settings, CalendarCheck, Navigation, Calendar, History,
-    Wallet
+    Wallet, Banknote
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import "@/app/dashboard.css";
@@ -34,6 +34,7 @@ const ROLE_NAV_MAP: Record<string, NavItem[]> = {
         { label: "Drivers", href: "/dashboard/drivers", icon: UserCog },
         { label: "Trips", href: "/dashboard/trips", icon: MapPin },
         { label: "Staff", href: "/dashboard/staff", icon: Users },
+        { label: "Payroll", href: "/dashboard/payroll", icon: Banknote },
         { label: "Finance", href: "/dashboard/finance", icon: Wallet },
         { label: "Settings", href: "/dashboard/settings", icon: Settings },
     ],

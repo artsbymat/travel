@@ -56,6 +56,8 @@ model User {
   templateSchedules        TripTemplateSchedule[] @relation("DriverTemplateSchedules")
   profile                  UserProfile?
   passwordResetTokens      PasswordResetToken[]
+  payrollConfig            PayrollConfig?
+  payrollSlips             PayrollSlip[]
 
   @@index([vendorId])
   @@index([roleId])
@@ -125,6 +127,7 @@ model Vendor {
   settlements     VendorSettlement[]
   wallet          VendorWallet?
   tripTemplates   TripTemplate[]
+  payrollPeriods  PayrollPeriod[]
 
   @@index([cityId])
   @@index([isActive])
@@ -239,6 +242,7 @@ model Trip {
   activities         TripActivity[]
   rescheduledFrom    Trip?          @relation("TripReschedule", fields: [rescheduledFromId], references: [id])
   rescheduledTo      Trip?          @relation("TripReschedule")
+  payrollCommissions PayrollTripCommission[]
 
   @@index([vehicleId])
   @@index([driverId])
@@ -782,4 +786,129 @@ enum WithdrawStatus {
   PROCESSING
   COMPLETED
   REJECTED
+}
+
+// ═══════════════════════════════════════════════
+// PAYROLL SYSTEM
+// ═══════════════════════════════════════════════
+
+// Konfigurasi payroll per user (driver/staff)
+model PayrollConfig {
+  id              String          @id @default(cuid())
+  userId          String          @unique
+  baseSalary      Decimal         @default(0) @db.Decimal(14, 2)
+  commissionType  CommissionType?
+  commissionValue Decimal?        @db.Decimal(14, 2)
+  effectiveFrom   DateTime        @default(now())
+  notes           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Periode payroll bulanan per vendor
+model PayrollPeriod {
+  id          String        @id @default(cuid())
+  vendorId    String
+  month       Int
+  year        Int
+  status      PayrollStatus @default(DRAFT)
+  totalAmount Decimal       @default(0) @db.Decimal(14, 2)
+  approvedAt  DateTime?
+  paidAt      DateTime?
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  vendor      Vendor        @relation(fields: [vendorId], references: [id])
+  slips       PayrollSlip[]
+
+  @@unique([vendorId, month, year])
+  @@index([vendorId])
+  @@index([status])
+}
+
+// Slip gaji per user per periode
+model PayrollSlip {
+  id              String                  @id @default(cuid())
+  periodId        String
+  userId          String
+  baseSalary      Decimal                 @default(0) @db.Decimal(14, 2)
+  totalCommission Decimal                 @default(0) @db.Decimal(14, 2)
+  totalBonus      Decimal                 @default(0) @db.Decimal(14, 2)
+  totalDeduction  Decimal                 @default(0) @db.Decimal(14, 2)
+  netAmount       Decimal                 @default(0) @db.Decimal(14, 2)
+  status          PayrollSlipStatus       @default(PENDING)
+  notes           String?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  period          PayrollPeriod            @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  user            User                     @relation(fields: [userId], references: [id])
+  items           PayrollSlipItem[]
+  commissions     PayrollTripCommission[]
+
+  @@unique([periodId, userId])
+  @@index([periodId])
+  @@index([userId])
+  @@index([status])
+}
+
+// Detail item slip (gaji pokok, bonus, potongan)
+model PayrollSlipItem {
+  id        String          @id @default(cuid())
+  slipId    String
+  type      PayrollItemType
+  label     String
+  amount    Decimal         @db.Decimal(14, 2)
+  notes     String?
+  createdAt DateTime        @default(now())
+  slip      PayrollSlip     @relation(fields: [slipId], references: [id], onDelete: Cascade)
+
+  @@index([slipId])
+  @@index([type])
+}
+
+// Detail komisi per trip (untuk driver)
+model PayrollTripCommission {
+  id              String         @id @default(cuid())
+  slipId          String
+  tripId          String
+  tripDate        DateTime
+  tripRoute       String
+  tripPrice       Decimal        @db.Decimal(12, 2)
+  commissionType  CommissionType
+  commissionValue Decimal        @db.Decimal(14, 2)
+  commissionAmount Decimal       @db.Decimal(14, 2)
+  createdAt       DateTime       @default(now())
+  slip            PayrollSlip    @relation(fields: [slipId], references: [id], onDelete: Cascade)
+  trip            Trip           @relation(fields: [tripId], references: [id])
+
+  @@unique([slipId, tripId])
+  @@index([slipId])
+  @@index([tripId])
+}
+
+enum CommissionType {
+  FIXED
+  PERCENTAGE
+}
+
+enum PayrollStatus {
+  DRAFT
+  APPROVED
+  PAID
+}
+
+enum PayrollSlipStatus {
+  PENDING
+  APPROVED
+  PAID
+}
+
+enum PayrollItemType {
+  BASE_SALARY
+  COMMISSION
+  BONUS
+  DEDUCTION
 }

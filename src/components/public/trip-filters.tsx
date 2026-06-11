@@ -22,6 +22,8 @@ interface TripFiltersProps {
   onCapacityChange: (capacity: string | null) => void;
   onAmenitiesChange: (amenities: string[]) => void;
   onClearAll: () => void;
+  sortBy?: string;
+  onSortByChange?: (sort: string) => void;
 }
 
 const CAPACITIES = ["4-6 Kursi", "7-11 Kursi", "12+ Kursi"];
@@ -35,9 +37,12 @@ const AMENITIES = [
 export function TripFilters({
   minPrice,
   maxPrice,
+  onPriceChange,
   onCapacityChange,
   onAmenitiesChange,
-  onClearAll
+  onClearAll,
+  sortBy = "price-asc",
+  onSortByChange
 }: TripFiltersProps) {
   const [selectedCapacity, setSelectedCapacity] = useState<string | null>(null);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
@@ -55,7 +60,14 @@ export function TripFilters({
   const handleCapacityClick = (capacity: string) => {
     const newCapacity = selectedCapacity === capacity ? null : capacity;
     setSelectedCapacity(newCapacity);
-    onCapacityChange(newCapacity);
+
+    // Map to parent capacity representation (micro, medium, large)
+    let parentVal: string | null = null;
+    if (newCapacity === "4-6 Kursi") parentVal = "micro";
+    else if (newCapacity === "7-11 Kursi") parentVal = "medium";
+    else if (newCapacity === "12+ Kursi") parentVal = "large";
+
+    onCapacityChange(parentVal);
   };
 
   return (
@@ -81,9 +93,13 @@ export function TripFilters({
         <label className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">
           URUTKAN BERDASARKAN
         </label>
-        <select className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 focus:ring-2 focus:ring-teal-500/20 focus:outline-none">
-          <option>Harga: Rendah ke Tinggi</option>
-          <option>Harga: Tinggi ke Rendah</option>
+        <select
+          value={sortBy}
+          onChange={(e) => onSortByChange && onSortByChange(e.target.value)}
+          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 focus:ring-2 focus:ring-teal-500/20 focus:outline-none"
+        >
+          <option value="price-asc">Harga: Rendah ke Tinggi</option>
+          <option value="price-desc">Harga: Tinggi ke Rendah</option>
         </select>
       </div>
 
@@ -99,6 +115,7 @@ export function TripFilters({
             value={localMinPrice}
             onChange={(value) => {
               setLocalMinPrice(value);
+              onPriceChange(value, localMaxPrice);
             }}
             className="w-full rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-sm font-bold text-gray-700 focus:ring-2 focus:ring-teal-500/20 focus:outline-none"
           />
@@ -108,6 +125,7 @@ export function TripFilters({
             value={localMaxPrice}
             onChange={(value) => {
               setLocalMaxPrice(value);
+              onPriceChange(localMinPrice, value);
             }}
             className="w-full rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-sm font-bold text-gray-700 focus:ring-2 focus:ring-teal-500/20 focus:outline-none"
           />

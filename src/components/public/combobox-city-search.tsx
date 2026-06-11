@@ -106,7 +106,7 @@ export function ComboboxCitySearch({
       value={value}
       onValueChange={onChange}
       onInputValueChange={setInputValue}
-      itemToStringValue={(city) => city?.code ?? ""}
+      itemToStringValue={(city) => city?.name ?? ""}
       itemToStringLabel={(city) => city?.name ?? ""}
       isItemEqualToValue={(city, selectedCity) => city.code === selectedCity.code}
       id={id}

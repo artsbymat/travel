@@ -45,6 +45,7 @@ function TripsPageContent() {
   const [selectedCapacity, setSelectedCapacity] = useState<string | null>(null);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState<boolean>(false);
+  const [sortBy, setSortBy] = useState<string>("price-asc");
 
   // Dynamic lists and status states
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -92,8 +93,24 @@ function TripsPageContent() {
       if (match) {
         setOrigin(match);
       } else {
-        // Safe fallback: populate from URL directly so the search is NOT blocked
-        setOrigin({ code: urlOrigin, name: urlOrigin, province: "" });
+        // Fetch city details from API by code/ID
+        fetch(`/api/cities?q=${encodeURIComponent(urlOrigin)}`)
+          .then((r) => r.json())
+          .then((data) => {
+            if (data && data.length > 0) {
+              const c = data[0];
+              setOrigin({
+                code: c.code || c.id,
+                name: c.name,
+                province: c.province?.name || ""
+              });
+            } else {
+              setOrigin({ code: urlOrigin, name: urlOrigin, province: "" });
+            }
+          })
+          .catch(() => {
+            setOrigin({ code: urlOrigin, name: urlOrigin, province: "" });
+          });
       }
     }
     if (urlDest) {
@@ -105,8 +122,24 @@ function TripsPageContent() {
       if (match) {
         setDestination(match);
       } else {
-        // Safe fallback: populate from URL directly so the search is NOT blocked
-        setDestination({ code: urlDest, name: urlDest, province: "" });
+        // Fetch city details from API by code/ID
+        fetch(`/api/cities?q=${encodeURIComponent(urlDest)}`)
+          .then((r) => r.json())
+          .then((data) => {
+            if (data && data.length > 0) {
+              const c = data[0];
+              setDestination({
+                code: c.code || c.id,
+                name: c.name,
+                province: c.province?.name || ""
+              });
+            } else {
+              setDestination({ code: urlDest, name: urlDest, province: "" });
+            }
+          })
+          .catch(() => {
+            setDestination({ code: urlDest, name: urlDest, province: "" });
+          });
       }
     }
     if (urlDate) {
@@ -157,7 +190,7 @@ function TripsPageContent() {
 
   // 4. Client-side sorting & filters (price, capacity, amenities)
   const filteredTrips = useMemo(() => {
-    return trips.filter((trip) => {
+    const filtered = trips.filter((trip) => {
       const priceMatch = trip.pricePerSeat >= minPrice && trip.pricePerSeat <= maxPrice;
       const capacityMatch = !selectedCapacity
         ? true
@@ -173,7 +206,17 @@ function TripsPageContent() {
 
       return priceMatch && capacityMatch && amenitiesMatch;
     });
-  }, [trips, minPrice, maxPrice, selectedCapacity, selectedAmenities]);
+
+    // Sort the filtered results
+    return [...filtered].sort((a, b) => {
+      if (sortBy === "price-asc") {
+        return a.pricePerSeat - b.pricePerSeat;
+      } else if (sortBy === "price-desc") {
+        return b.pricePerSeat - a.pricePerSeat;
+      }
+      return 0;
+    });
+  }, [trips, minPrice, maxPrice, selectedCapacity, selectedAmenities, sortBy]);
 
   const handleSearch = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -199,7 +242,7 @@ function TripsPageContent() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      <div className="mx-auto max-w-7xl px-6 py-12">
+      <div className="mx-auto max-w-7xl px-6 pt-28 pb-12">
         <div>
           <form
             onSubmit={handleSearch}
@@ -296,6 +339,8 @@ function TripsPageContent() {
                       setSelectedCapacity(null);
                       setSelectedAmenities([]);
                     }}
+                    sortBy={sortBy}
+                    onSortByChange={setSortBy}
                   />
                 </div>
               </aside>
@@ -338,6 +383,8 @@ function TripsPageContent() {
                           setSelectedCapacity(null);
                           setSelectedAmenities([]);
                         }}
+                        sortBy={sortBy}
+                        onSortByChange={setSortBy}
                       />
                     </div>
                   )}

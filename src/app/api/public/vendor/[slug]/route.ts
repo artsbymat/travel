@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { startOfDay, endOfDay, addDays } from "date-fns";
@@ -169,9 +170,9 @@ export async function GET(
         logo: vendor.logo,
         city: vendor.city
           ? {
-              name: vendor.city.name,
-              province: vendor.city.province?.name || null,
-            }
+            name: vendor.city.name,
+            province: vendor.city.province?.name || null,
+          }
           : null,
       },
       todayTrips: todayTrips.map(formatTrip),

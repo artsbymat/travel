@@ -148,6 +148,11 @@ function SearchTicketContent() {
       setTimeline(data.timeline);
       setRefundCalc(data.refundCalculation);
       setUserReview(data.review);
+      if (data.booking.paymentMethod === "CASH") {
+        setRefundMethod("CASH_PICKUP");
+      } else {
+        setRefundMethod("BANK_TRANSFER");
+      }
       setHasSearched(true);
     } catch (err: any) {
       console.error("Lookup ticket error:", err);
@@ -1107,32 +1112,38 @@ function SearchTicketContent() {
                           Metode Pengembalian Dana
                         </h4>
 
-                        <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
-                          <button
-                            type="button"
-                            onClick={() => setRefundMethod("BANK_TRANSFER")}
-                            className={cn(
-                              "cursor-pointer rounded-lg py-1.5 text-center text-[10px] font-bold transition-all",
-                              refundMethod === "BANK_TRANSFER"
-                                ? "bg-white text-slate-900 shadow-sm"
-                                : "text-slate-500 hover:text-slate-800"
-                            )}
-                          >
-                            🏦 Transfer Bank
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setRefundMethod("CASH_PICKUP")}
-                            className={cn(
-                              "cursor-pointer rounded-lg py-1.5 text-center text-[10px] font-bold transition-all",
-                              refundMethod === "CASH_PICKUP"
-                                ? "bg-white text-slate-900 shadow-sm"
-                                : "text-slate-500 hover:text-slate-800"
-                            )}
-                          >
-                            💵 Tunai (Cash Pickup)
-                          </button>
-                        </div>
+                        {booking.paymentMethod === "CASH" ? (
+                          <div className="rounded-xl border border-amber-100 bg-amber-50/50 p-3 text-[10px] leading-relaxed font-semibold text-amber-800">
+                            ⚠️ <strong>Refund Tunai Obligatori:</strong> Karena metode pembayaran tiket ini menggunakan Tunai (CASH), pengembalian dana wajib secara Tunai (Cash Pickup) di loket fisik/counter vendor.
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
+                            <button
+                              type="button"
+                              onClick={() => setRefundMethod("BANK_TRANSFER")}
+                              className={cn(
+                                "cursor-pointer rounded-lg py-1.5 text-center text-[10px] font-bold transition-all",
+                                refundMethod === "BANK_TRANSFER"
+                                  ? "bg-white text-slate-900 shadow-sm"
+                                  : "text-slate-500 hover:text-slate-800"
+                              )}
+                            >
+                              🏦 Transfer Bank
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setRefundMethod("CASH_PICKUP")}
+                              className={cn(
+                                "cursor-pointer rounded-lg py-1.5 text-center text-[10px] font-bold transition-all",
+                                refundMethod === "CASH_PICKUP"
+                                  ? "bg-white text-slate-900 shadow-sm"
+                                  : "text-slate-500 hover:text-slate-800"
+                              )}
+                            >
+                              💵 Tunai (Cash Pickup)
+                            </button>
+                          </div>
+                        )}
 
                         <div className="space-y-2.5">
                           {refundMethod === "BANK_TRANSFER" && (

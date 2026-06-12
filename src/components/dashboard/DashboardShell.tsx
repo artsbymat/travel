@@ -40,6 +40,7 @@ const ROLE_NAV_MAP: Record<string, NavItem[]> = {
     ],
     STAFF: [
         { label: "Dashboard", href: "/staff", icon: LayoutDashboard },
+        { label: "Drivers", href: "/staff/drivers", icon: UserCog },
         { label: "Bookings", href: "/staff/bookings", icon: CalendarCheck },
         { label: "Trips", href: "/staff/trips", icon: Navigation },
     ],

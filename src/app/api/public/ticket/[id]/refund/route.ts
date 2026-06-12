@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
@@ -141,11 +142,10 @@ export async function POST(
         activeRefundPercentage = Number(matchingPolicy.refundPercentage);
       }
     }
-
     const originalAmount = new Prisma.Decimal(booking.totalAmount);
     const refundAmount = originalAmount.times(new Prisma.Decimal(activeRefundPercentage).div(100));
-    const adminFee = isVendorCancelled ? new Prisma.Decimal(0) : new Prisma.Decimal(10000); // flat admin fee (waived if vendor cancelled)
-    
+    const adminFee = new Prisma.Decimal(0); // flat admin fee set to 0 (gratis)
+
     // Safety check using Decimal comparison operators (.gt = greater than)
     const netAmount = refundAmount.minus(adminFee);
     const finalAmount = netAmount.gt(0) ? netAmount : new Prisma.Decimal(0);

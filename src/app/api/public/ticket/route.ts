@@ -148,12 +148,10 @@ export async function GET(req: NextRequest) {
         activeRefundPercentage = Number(matchingPolicy.refundPercentage);
       }
     }
-
     const originalAmount = Number(booking.totalAmount);
     const refundAmount = (originalAmount * activeRefundPercentage) / 100;
-    const adminFee = isVendorCancelledAwaitingRefund ? 0 : 10000; // Flat admin handling fee (waived if vendor cancelled)
+    const adminFee = 0; // Flat admin handling fee set to 0 (gratis)
     const finalAmount = Math.max(refundAmount - adminFee, 0);
-
     // 4. Check if rating is already left in TripActivity
     const existingReview = await prisma.tripActivity.findFirst({
       where: {

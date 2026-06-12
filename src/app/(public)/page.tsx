@@ -422,8 +422,7 @@ export default async function Home() {
                   rel="noopener noreferrer"
                 >
                   <Button
-                    variant="outline"
-                    className="w-full cursor-pointer justify-center rounded-xl border-zinc-700 px-6 py-5 font-semibold text-white hover:bg-zinc-800 sm:w-auto"
+                    className="w-full cursor-pointer justify-center rounded-xl border border-zinc-600 bg-zinc-800/60 px-6 py-5 font-semibold text-white hover:bg-zinc-700/80 hover:border-zinc-500 transition-all sm:w-auto"
                   >
                     Konsultasi Gratis
                   </Button>

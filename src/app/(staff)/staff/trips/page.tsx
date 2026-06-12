@@ -1,16 +1,23 @@
-import { Navigation } from "lucide-react";
+"use client";
+
+import dynamic from "next/dynamic";
+
+const TripCalendar = dynamic(() => import("@/components/vendor/trip-calendar"), { ssr: false });
+const CreateTripDialog = dynamic(() => import("@/components/vendor/create-trip-dialog"), { ssr: false });
+const TripDetailDrawer = dynamic(() => import("@/components/vendor/trip-detail-drawer"), { ssr: false });
+const EditTripDialog = dynamic(() => import("@/components/vendor/edit-trip-dialog"), { ssr: false });
+const RescheduleDialog = dynamic(() => import("@/components/vendor/reschedule-dialog"), { ssr: false });
+const TripTemplateDrawer = dynamic(() => import("@/components/vendor/trip-template-drawer"), { ssr: false });
 
 export default function StaffTripsPage() {
-    return (
-        <div className="scaffold-page">
-            <div className="scaffold-header">
-                <h1 className="scaffold-title">Trips</h1>
-                <p className="scaffold-subtitle">Monitoring perjalanan yang sedang berlangsung.</p>
-            </div>
-            <div className="scaffold-placeholder">
-                <div className="scaffold-placeholder-icon"><Navigation size={40} color="#94a3b8" /></div>
-                <p className="scaffold-placeholder-text">Status trip real-time, penugasan driver, dan tracking.</p>
-            </div>
-        </div>
-    );
+  return (
+    <>
+      <TripCalendar />
+      <CreateTripDialog />
+      <TripDetailDrawer />
+      <EditTripDialog />
+      <RescheduleDialog />
+      <TripTemplateDrawer />
+    </>
+  );
 }
